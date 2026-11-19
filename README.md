@@ -99,12 +99,13 @@ where $k_v$ is the degree of node $v$ in the undirected view and $e_v$ is the nu
 ## Project Structure
 
 ```text
-lsga-blockchain-anomaly/
+ARCNET---Real-Time-Anomaly-Detector/
 ├── README.md
 ├── requirements.txt
+├── anomaly engine/
+│   └── server.py              # FastAPI server, WebSocket broadcaster & Anomaly Inbox endpoints
 ├── backend/
 │   ├── blockchain_graph.py    # WebSocket ingestion, dynamic graph engine, pruner & anomaly detector
-│   └── server.py              # FastAPI server, WebSocket broadcaster & Anomaly Inbox endpoints
 └── frontend/
     └── index.html             # Bright minimalist UI, Cytoscape.js live graph, pop-ups & Inbox drawer
 ```
@@ -129,7 +130,7 @@ lsga-blockchain-anomaly/
 ### 2. Clone & Install Dependencies
 ```bash
 git clone <your-repo-url>
-cd lsga-blockchain-anomaly
+cd ARCNET---Real-Time-Anomaly-Detector
 pip install -r requirements.txt
 ```
 
