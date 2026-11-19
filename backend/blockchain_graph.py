@@ -11,7 +11,7 @@ from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 import networkx as nx
 import websockets
 
-BLOCKCHAIN_WS_URL = "wss://ws.blockchain.info/inv"
+BLOCKCHAIN_WS_URL = "https://www.blockchain.com/explorer"
 SATOSHI_PER_BTC = 1e8
 
 
