@@ -1,8 +1,8 @@
 {
   "functions": {
-    "app.py": {
+    "backend/server.py": {
       "maxDuration": 300,
-      "includeFiles": "frontend/"
+      "includeFiles": "frontend/**"
     }
   }
 }
