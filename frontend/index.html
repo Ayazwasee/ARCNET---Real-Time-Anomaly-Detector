@@ -26,7 +26,7 @@
       --rose: #f43f5e;
       --rose-soft: #fff1f2;
       --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-      --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.08);
+      --shadow-md: 0 10px 26px -6px rgba(15, 23, 42, 0.08);
       --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.16);
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -51,7 +51,7 @@
       top: 0;
       z-index: 40;
       backdrop-filter: blur(14px);
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       border-bottom: 1px solid var(--border);
       padding: 14px 28px;
       display: flex;
@@ -60,11 +60,7 @@
       gap: 16px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .brand { display: flex; align-items: center; gap: 12px; }
 
     .brand-mark {
       width: 36px;
@@ -75,19 +71,15 @@
       place-items: center;
       color: #fff;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
+      letter-spacing: 0.02em;
       box-shadow: 0 6px 14px rgba(37, 99, 235, 0.28);
     }
 
     .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
     .brand p { font-size: 12px; color: var(--muted); }
 
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
     .status-pill {
       display: inline-flex;
@@ -153,18 +145,29 @@
       background: var(--primary);
       color: #fff;
       border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
     }
     .btn-primary:hover {
       background: #1d4ed8;
       border-color: #1d4ed8;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
     }
 
     .btn-soft {
       background: var(--primary-soft);
       color: var(--primary);
       border-color: #bfdbfe;
+    }
+
+    .btn-live {
+      background: linear-gradient(135deg, var(--primary), var(--sky));
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
+    }
+    .btn-live:hover {
+      filter: brightness(1.06);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38);
     }
 
     .badge {
@@ -180,11 +183,12 @@
       place-items: center;
       transition: transform 0.35s var(--ease);
     }
+    .badge.soft-blue { background: var(--primary); }
     .badge.bump { transform: scale(1.32); }
 
     /* Main Container */
     .container {
-      max-width: 1360px;
+      max-width: 1420px;
       margin: 0 auto;
       padding: 24px 28px 48px;
       display: flex;
@@ -215,7 +219,7 @@
     .kpi-value.accent { color: var(--primary); }
     .kpi-value.danger { color: var(--rose); }
 
-    /* Graph Toggle Card */
+    /* Cards */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -234,8 +238,19 @@
       flex-wrap: wrap;
     }
 
-    .card-title-group h2 { font-size: 15px; font-weight: 700; }
+    .card-title-group h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
     .card-title-group p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Workspace Grid: Graph (Left) + Live Anomalies Side Panel (Right) */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 365px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1080px) {
+      .workspace-grid { grid-template-columns: 1fr; }
+    }
 
     /* Toggle Switch */
     .toggle-wrap {
@@ -301,13 +316,155 @@
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; }
 
+    .canvas-stage { position: relative; }
+
     #cy {
       width: 100%;
-      height: 500px;
-      background:
-        radial-gradient(#cbd5e1 1px, transparent 1px);
+      height: 520px;
+      background: radial-gradient(#cbd5e1 1px, transparent 1px);
       background-size: 24px 24px;
       background-color: #fcfdff;
+      transition: box-shadow 0.35s var(--ease);
+    }
+    #cy.frozen {
+      box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.45);
+      background-color: #fffdf7;
+    }
+
+    /* Focus Mode / Paused Floating Banner */
+    .focus-banner {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translate(-50%, -22px);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px 10px 18px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid #fde68a;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s var(--ease);
+      max-width: 92%;
+    }
+    .focus-banner.visible {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .focus-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #b45309;
+      background: var(--amber-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .focus-meta {
+      font-size: 12.5px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .focus-meta span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Live Anomalies Side Panel */
+    .anomaly-panel {
+      display: flex;
+      flex-direction: column;
+      height: 642px;
+    }
+    @media (max-width: 1080px) { .anomaly-panel { height: auto; max-height: 460px; } }
+
+    .anomaly-panel-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fafcff;
+    }
+
+    .anomaly-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--rose);
+      border-radius: 13px;
+      padding: 13px 14px;
+      cursor: pointer;
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
+      animation: cardPopIn 0.4s var(--ease);
+    }
+    .anomaly-card.medium { border-left-color: var(--amber); }
+    .anomaly-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: #fecdd3;
+    }
+    @keyframes cardPopIn {
+      from { opacity: 0; transform: translateX(16px) scale(0.98); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    .anomaly-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .anomaly-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .score-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--rose-soft);
+      color: var(--rose);
+      white-space: nowrap;
+    }
+    .anomaly-card.medium .score-tag {
+      background: var(--amber-soft);
+      color: #b45309;
+    }
+    .anomaly-card-summary {
+      font-size: 12px;
+      line-height: 1.48;
+      color: #475569;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 9px;
+    }
+    .anomaly-card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .inspect-link {
+      color: var(--primary);
+      font-weight: 600;
     }
 
     /* Node Inspector Floating Card */
@@ -315,7 +472,7 @@
       position: absolute;
       right: 18px;
       bottom: 18px;
-      width: 290px;
+      width: 295px;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border);
@@ -326,6 +483,7 @@
       opacity: 0;
       pointer-events: none;
       transition: all 0.3s var(--ease);
+      z-index: 15;
     }
     .node-inspector.visible {
       transform: translateY(0);
@@ -365,7 +523,7 @@
     @media (max-width: 960px) { .split-grid { grid-template-columns: 1fr; } }
 
     .feed-list {
-      max-height: 290px;
+      max-height: 270px;
       overflow-y: auto;
       padding: 8px 16px 14px;
     }
@@ -401,42 +559,43 @@
       cursor: pointer;
     }
 
-    /* Real-Time Anomaly Pop-Up Modal */
+    /* On-Click Anomaly Detail Pop-Up Modal */
     .popup-backdrop {
       position: fixed;
       inset: 0;
       z-index: 90;
-      background: rgba(15, 23, 42, 0.22);
+      background: rgba(15, 23, 42, 0.24);
       backdrop-filter: blur(4px);
       display: grid;
       place-items: center;
       padding: 20px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s var(--ease);
+      transition: opacity 0.28s var(--ease);
     }
     .popup-backdrop.show { opacity: 1; pointer-events: auto; }
 
     .popup-card {
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       background: var(--surface);
       border: 1px solid #fecdd3;
       border-radius: 20px;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
-      transform: translateY(24px) scale(0.96);
-      transition: transform 0.4s var(--ease);
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.36s var(--ease);
     }
     .popup-backdrop.show .popup-card { transform: translateY(0) scale(1); }
 
     .popup-header {
       background: linear-gradient(135deg, #fff1f2, #ffffff);
-      padding: 18px 22px;
+      padding: 16px 22px;
       border-bottom: 1px solid #ffe4e6;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
     }
     .severity-pill {
       padding: 4px 10px;
@@ -448,6 +607,8 @@
       background: var(--rose);
       color: #fff;
     }
+    .severity-pill.medium { background: var(--amber); }
+
     .popup-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
     .popup-title { font-size: 18px; font-weight: 700; color: var(--text); }
     .popup-summary { font-size: 14px; line-height: 1.55; color: #334155; }
@@ -473,6 +634,7 @@
     }
     .metric-chip span { display: block; font-size: 11px; color: var(--muted); }
     .metric-chip strong { font-size: 14px; color: var(--text); }
+
     .popup-footer {
       padding: 14px 22px;
       background: #f8fafc;
@@ -481,8 +643,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      flex-wrap: wrap;
     }
-    .queue-hint { font-size: 12px; color: var(--muted); font-weight: 500; }
 
     /* Anomaly Inbox Slide-Over Drawer */
     .drawer-overlay {
@@ -501,7 +663,7 @@
       top: 0;
       right: 0;
       height: 100vh;
-      width: 420px;
+      width: 430px;
       max-width: 92vw;
       z-index: 85;
       background: var(--surface);
@@ -534,11 +696,13 @@
     .inbox-type { font-size: 13px; font-weight: 700; color: var(--rose); }
     .inbox-time { font-size: 11px; color: var(--muted); }
     .inbox-desc { font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 10px; }
+
     .empty-state {
       text-align: center;
-      padding: 48px 20px;
+      padding: 46px 20px;
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -546,7 +710,7 @@
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark">CP</div>
+      <div class="brand-mark">AN</div>
       <div>
         <h1>ARCNET</h1>
         <p>Real-Time Dynamic Blockchain Graph & Anomaly Detector</p>
@@ -561,7 +725,7 @@
       <button class="btn btn-soft" onclick="simulateAnomaly()">+ Test Anomaly</button>
       <button class="btn" onclick="toggleInbox(true)">
         Anomaly Inbox
-        <span id="inboxBadge" class="badge">0</span>
+        <span id="inboxBadge" class="badge soft-blue">0</span>
       </button>
     </div>
   </header>
@@ -585,58 +749,97 @@
         <div id="kpiComponents" class="kpi-sub">0 connected clusters</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Flagged Anomalies</div>
+        <div class="kpi-label">Active Unread Alerts</div>
         <div id="kpiAnomalies" class="kpi-value danger">0</div>
-        <div class="kpi-sub">Acknowledged alerts stored in Inbox</div>
+        <div id="kpiInboxSummary" class="kpi-sub">0 archived in Anomaly Inbox</div>
       </div>
     </section>
 
-    <!-- Toggleable Active Real-Time Graph Card -->
-    <section class="card">
-      <div class="card-header">
-        <div class="card-title-group">
-          <h2>Active Real-Time Network Graph</h2>
-          <p>Toggle live interactive topology — zoom, pan, drag, or click any wallet node to inspect metrics.</p>
+    <!-- Main Workspace: Active Graph (Left) + Live Anomalies Side Panel (Right) -->
+    <section class="workspace-grid">
+      <!-- Active Real-Time Graph Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Active Real-Time Network Graph</h2>
+            <p>Zoom, pan, drag, or click any wallet node to inspect metrics.</p>
+          </div>
+          <div class="toggle-wrap" onclick="toggleGraphView()">
+            <span id="graphToggleLabel">Hide Active Graph</span>
+            <div id="graphSwitch" class="switch active"></div>
+          </div>
         </div>
-        <div class="toggle-wrap" onclick="toggleGraphView()">
-          <span id="graphToggleLabel">Show Active Graph</span>
-          <div id="graphSwitch" class="switch active"></div>
+
+        <div id="graphShell" class="graph-shell open">
+          <div class="graph-inner">
+            <div class="graph-toolbar">
+              <div class="legend">
+                <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
+                <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Active Hub</div>
+                <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Node</div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button id="resumeToolbarBtn" class="btn btn-live" style="display:none;" onclick="resumeLiveGraph()">
+                  ↺ Back to Live Graph
+                </button>
+                <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
+                <button class="btn" onclick="runSmoothLayout(true)">Re-Layout</button>
+                <button class="btn" onclick="fitGraph()">Fit View</button>
+              </div>
+            </div>
+
+            <div class="canvas-stage">
+              <!-- Floating Inspection / Paused Banner -->
+              <div id="focusBanner" class="focus-banner">
+                <span class="focus-pill">⏸ Graph Paused</span>
+                <div class="focus-meta">
+                  <strong id="focusTargetLabel">Inspecting anomaly node</strong>
+                  <span id="focusBufferText">Live updates held while inspecting</span>
+                </div>
+                <button class="btn btn-live" style="padding:7px 13px; font-size:12.5px;" onclick="resumeLiveGraph()">
+                  Back to Live Graph
+                </button>
+              </div>
+
+              <div id="cy"></div>
+
+              <!-- Interactive Node Inspector -->
+              <div id="nodeInspector" class="node-inspector">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong style="font-size:13px;">Wallet Node Details</strong>
+                  <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
+                </div>
+                <div id="inspAddr" class="inspector-addr"></div>
+                <div class="inspector-grid">
+                  <div class="inspector-stat"><span>In / Out Degree</span><strong id="inspDeg">0 / 0</strong></div>
+                  <div class="inspector-stat"><span>Tx Count</span><strong id="inspTx">0</strong></div>
+                  <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
+                  <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div id="graphShell" class="graph-shell open">
-        <div class="graph-inner">
-          <div class="graph-toolbar">
-            <div class="legend">
-              <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
-              <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Active Hub</div>
-              <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Node</div>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
-              <button class="btn" onclick="runSmoothLayout()">Re-Layout</button>
-              <button class="btn" onclick="fitGraph()">Fit View</button>
-            </div>
-          </div>
-
-          <div id="cy"></div>
-
-          <!-- Interactive Node Inspector -->
-          <div id="nodeInspector" class="node-inspector">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="font-size:13px;">Wallet Node Details</strong>
-              <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
-            </div>
-            <div id="inspAddr" class="inspector-addr"></div>
-            <div class="inspector-grid">
-              <div class="inspector-stat"><span>In / Out Degree</span><strong id="inspDeg">0 / 0</strong></div>
-              <div class="inspector-stat"><span>Tx Count</span><strong id="inspTx">0</strong></div>
-              <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
-              <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
-            </div>
+      <!-- Live Anomalies Side Panel -->
+      <aside class="card anomaly-panel">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              Live Anomalies
+              <span id="sidePanelBadge" class="badge">0</span>
+            </h2>
+            <p>Click any alert to inspect details & focus node</p>
           </div>
         </div>
-      </div>
+        <div id="anomalySideList" class="anomaly-panel-list">
+          <div class="empty-state">
+            Monitoring live Bitcoin network...<br />
+            Detected anomalies will appear here in real time.
+          </div>
+        </div>
+      </aside>
     </section>
 
     <!-- Live Stream Feed + Engine Controls -->
@@ -670,32 +873,32 @@
             <input id="whaleSlider" type="range" min="1" max="25" step="0.5" value="5" oninput="updateConfigUI()" onchange="pushConfig()" />
           </div>
           <p style="font-size:12px; color:var(--muted); line-height:1.5;">
-            Older edges automatically expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
+            Older edges expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
           </p>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Real-Time Anomaly Pop-Up -->
-  <div id="popupBackdrop" class="popup-backdrop">
+  <!-- On-Click Anomaly Details Pop-Up -->
+  <div id="popupBackdrop" class="popup-backdrop" onclick="handleBackdropClick(event)">
     <div class="popup-card">
       <div class="popup-header">
-        <span class="severity-pill" id="popupSeverity">HIGH SEVERITY</span>
-        <span id="popupScore" class="mono" style="font-weight:700; color:var(--rose);">Score: 92/100</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="severity-pill" id="popupSeverity">HIGH SEVERITY</span>
+          <span id="popupScore" class="mono" style="font-weight:700; color:var(--rose);">Score: 92/100</span>
+        </div>
+        <button class="btn" style="padding:4px 10px; font-size:12px;" onclick="closeDetailsModal()">✕</button>
       </div>
       <div class="popup-body">
-        <div id="popupTitle" class="popup-title">Anomaly Detected</div>
+        <div id="popupTitle" class="popup-title">Anomaly Details</div>
         <div id="popupSummary" class="popup-summary"></div>
         <div id="popupExplain" class="popup-explain"></div>
         <div id="popupMetrics" class="metric-chips"></div>
       </div>
       <div class="popup-footer">
-        <span id="queueHint" class="queue-hint"></span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn" onclick="inspectCurrentPopupNode()">Focus Node</button>
-          <button class="btn btn-primary" onclick="acknowledgePopup()">Mark as Read → Inbox</button>
-        </div>
+        <button class="btn" onclick="markSelectedAsReadOnly()">Mark as Read → Inbox</button>
+        <button class="btn btn-primary" onclick="focusSelectedAnomalyNode()">Focus Node & Pause Graph</button>
       </div>
     </div>
   </div>
@@ -706,12 +909,12 @@
     <div class="card-header">
       <div class="card-title-group">
         <h2>Anomaly Inbox</h2>
-        <p>Read & archived real-time alerts</p>
+        <p>Inspected & archived real-time alerts</p>
       </div>
       <button class="btn" onclick="toggleInbox(false)">Close</button>
     </div>
     <div id="inboxList" class="inbox-list">
-      <div class="empty-state">No read anomalies yet. Acknowledged pop-ups will appear here.</div>
+      <div class="empty-state">No archived anomalies yet. Click an alert to focus or mark it as read.</div>
     </div>
   </aside>
 
@@ -719,11 +922,21 @@
     let cy = null;
     let graphOpen = true;
     let layoutPaused = false;
+    let graphFrozen = false;
+    let pausedUpdatesCount = 0;
     let lastLayoutTime = 0;
-    let popupQueue = [];
-    let activePopup = null;
+
+    let unreadAlerts = [];
     let inboxItems = [];
-    let totalAnomaliesSeen = 0;
+    let selectedAlert = null;
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"');
+    }
 
     // 1. Initialize Cytoscape Interactive Graph
     function initCytoscape() {
@@ -751,9 +964,7 @@
           },
           {
             selector: 'node[degree >= 4]',
-            style: {
-              'background-color': '#0ea5e9'
-            }
+            style: { 'background-color': '#0ea5e9' }
           },
           {
             selector: 'node[?is_anomaly]',
@@ -766,6 +977,21 @@
               'font-weight': '700',
               'color': '#be123c'
             }
+          },
+          {
+            selector: 'node.focused-target',
+            style: {
+              'background-color': '#f43f5e',
+              'border-width': 6,
+              'border-color': '#f59e0b',
+              'width': 44,
+              'height': 44,
+              'z-index': 99
+            }
+          },
+          {
+            selector: '.dimmed',
+            style: { 'opacity': 0.2 }
           },
           {
             selector: 'edge',
@@ -791,30 +1017,21 @@
           },
           {
             selector: 'node:selected',
-            style: {
-              'border-width': 4,
-              'border-color': '#0f172a'
-            }
+            style: { 'border-width': 4, 'border-color': '#0f172a' }
           }
         ],
         layout: { name: 'cose', animate: true }
       });
 
       cy.on('tap', 'node', (evt) => {
-        const d = evt.target.data();
-        document.getElementById('inspAddr').textContent = d.id;
-        document.getElementById('inspDeg').textContent = `${d.in_degree} / ${d.out_degree}`;
-        document.getElementById('inspTx').textContent = d.tx_count;
-        document.getElementById('inspIn').textContent = d.total_in_btc;
-        document.getElementById('inspOut').textContent = d.total_out_btc;
-        document.getElementById('nodeInspector').classList.add('visible');
+        showNodeInspector(evt.target.data());
       });
 
       cy.on('tap', (evt) => {
         if (evt.target === cy) closeInspector();
       });
 
-      // Subtle breathing pulse animation for anomalous nodes
+      // Subtle breathing pulse for anomalous nodes
       setInterval(() => {
         if (!cy || !graphOpen) return;
         const flagged = cy.nodes('[?is_anomaly]');
@@ -824,12 +1041,21 @@
       }, 1500);
     }
 
+    function showNodeInspector(d) {
+      document.getElementById('inspAddr').textContent = d.id || 'N/A';
+      document.getElementById('inspDeg').textContent = `${d.in_degree ?? 0} / ${d.out_degree ?? 0}`;
+      document.getElementById('inspTx').textContent = d.tx_count ?? 1;
+      document.getElementById('inspIn').textContent = d.total_in_btc ?? 0;
+      document.getElementById('inspOut').textContent = d.total_out_btc ?? 0;
+      document.getElementById('nodeInspector').classList.add('visible');
+    }
+
     function closeInspector() {
       document.getElementById('nodeInspector').classList.remove('visible');
     }
 
     function runSmoothLayout(force = false) {
-      if (!cy || !graphOpen || (layoutPaused && !force)) return;
+      if (!cy || !graphOpen || graphFrozen || (layoutPaused && !force)) return;
       const now = Date.now();
       if (!force && now - lastLayoutTime < 1800) return;
       lastLayoutTime = now;
@@ -865,11 +1091,16 @@
       }
     }
 
-    // 2. Apply Live Graph Diffs
+    // 2. Apply Live Graph Diffs (Skipped while Frozen in Focus Mode)
     function upsertGraphElements(nodes, edges, removedNodes = [], removedEdges = []) {
       if (!cy) return;
-      let structureChanged = false;
+      if (graphFrozen) {
+        pausedUpdatesCount += 1;
+        updateFocusBufferUI();
+        return;
+      }
 
+      let structureChanged = false;
       cy.batch(() => {
         removedEdges.forEach((eid) => {
           const el = cy.getElementById(eid);
@@ -881,7 +1112,7 @@
         });
 
         const cx = cy.width() / 2 || 400;
-        const cyMid = cy.height() / 2 || 250;
+        const cyMid = cy.height() / 2 || 260;
 
         nodes.forEach((n) => {
           const existing = cy.getElementById(n.id);
@@ -912,104 +1143,264 @@
         });
       });
 
-      // Fade fresh edge highlight smoothly back to neutral
       setTimeout(() => {
-        if (cy) edges.forEach((e) => cy.getElementById(e.id).removeClass('fresh'));
+        if (cy && !graphFrozen) {
+          edges.forEach((e) => cy.getElementById(e.id).removeClass('fresh'));
+        }
       }, 900);
 
       if (structureChanged) runSmoothLayout();
     }
 
-    // 3. Pop-Up Queue -> Read -> Anomaly Inbox Workflow
-    function enqueueAlerts(alerts) {
-      if (!alerts || !alerts.length) return;
-      totalAnomaliesSeen += alerts.length;
-      document.getElementById('kpiAnomalies').textContent = totalAnomaliesSeen;
-      alerts.forEach((a) => popupQueue.push(a));
-      if (!activePopup) showNextPopup();
-      else updateQueueHint();
+    function replaceGraphFromSnapshot(snapshot) {
+      if (!cy || !snapshot) return;
+      cy.batch(() => {
+        cy.elements().remove();
+        const cx = cy.width() / 2 || 400;
+        const cyMid = cy.height() / 2 || 260;
+
+        (snapshot.nodes || []).forEach((n) => {
+          cy.add({
+            group: 'nodes',
+            data: n,
+            position: {
+              x: cx + (Math.random() - 0.5) * 220,
+              y: cyMid + (Math.random() - 0.5) * 220
+            }
+          });
+        });
+        (snapshot.edges || []).forEach((e) => {
+          if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) {
+            cy.add({ group: 'edges', data: e });
+          }
+        });
+      });
+      runSmoothLayout(true);
+      setTimeout(() => fitGraph(), 480);
     }
 
-    function showNextPopup() {
-      if (popupQueue.length === 0) {
-        activePopup = null;
-        document.getElementById('popupBackdrop').classList.remove('show');
+    // 3. Live Anomalies Side Panel -> Click -> Details Modal -> Focus & Pause -> Inbox
+    function addIncomingAlerts(alerts) {
+      if (!alerts || !alerts.length) return;
+      alerts.forEach((a) => {
+        if (!unreadAlerts.some((x) => x.id === a.id)) {
+          unreadAlerts.unshift(a);
+        }
+      });
+      if (unreadAlerts.length > 40) unreadAlerts = unreadAlerts.slice(0, 40);
+      renderAnomalySidePanel(true);
+    }
+
+    function renderAnomalySidePanel(bump = false) {
+      const list = document.getElementById('anomalySideList');
+      const badge = document.getElementById('sidePanelBadge');
+      badge.textContent = unreadAlerts.length;
+      document.getElementById('kpiAnomalies').textContent = unreadAlerts.length;
+
+      if (bump) {
+        badge.classList.add('bump');
+        setTimeout(() => badge.classList.remove('bump'), 350);
+      }
+
+      if (unreadAlerts.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            No unread anomalies.<br />
+            New real-time detections will stream here automatically.
+          </div>
+        `;
         return;
       }
 
-      activePopup = popupQueue.shift();
-      document.getElementById('popupSeverity').textContent = `${activePopup.severity} severity`;
-      document.getElementById('popupScore').textContent = `Score: ${activePopup.score}/100`;
-      document.getElementById('popupTitle').textContent = activePopup.type;
-      document.getElementById('popupSummary').textContent = activePopup.summary;
-      document.getElementById('popupExplain').textContent = activePopup.explanation;
+      list.innerHTML = unreadAlerts.map((item) => {
+        const timeStr = new Date(item.timestamp * 1000).toLocaleTimeString();
+        const sevClass = item.severity === 'medium' ? 'medium' : 'high';
+        return `
+          <div class="anomaly-card ${sevClass}" onclick="openAlertDetails('${escapeHtml(item.id)}')">
+            <div class="anomaly-card-top">
+              <span class="anomaly-card-title">${escapeHtml(item.type)}</span>
+              <span class="score-tag">${item.score}/100</span>
+            </div>
+            <div class="anomaly-card-summary">${escapeHtml(item.summary)}</div>
+            <div class="anomaly-card-foot">
+              <span class="mono">${escapeHtml(item.short_node)} · ${timeStr}</span>
+              <span class="inspect-link">Inspect →</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openAlertDetails(alertId) {
+      const alert = unreadAlerts.find((a) => a.id === alertId);
+      if (!alert) return;
+      selectedAlert = alert;
+
+      const sevPill = document.getElementById('popupSeverity');
+      sevPill.textContent = `${alert.severity} severity`;
+      sevPill.classList.toggle('medium', alert.severity === 'medium');
+
+      document.getElementById('popupScore').textContent = `Score: ${alert.score}/100`;
+      document.getElementById('popupTitle').textContent = alert.type;
+      document.getElementById('popupSummary').textContent = alert.summary;
+      document.getElementById('popupExplain').textContent = alert.explanation;
 
       const metricsEl = document.getElementById('popupMetrics');
-      metricsEl.innerHTML = Object.entries(activePopup.metrics || {})
-        .map(([k, v]) => `<div class="metric-chip"><span>${k}</span><strong>${v}</strong></div>`)
+      metricsEl.innerHTML = Object.entries(alert.metrics || {})
+        .map(([k, v]) => `<div class="metric-chip"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`)
         .join('');
 
-      updateQueueHint();
       document.getElementById('popupBackdrop').classList.add('show');
     }
 
-    function updateQueueHint() {
-      const hint = document.getElementById('queueHint');
-      hint.textContent = popupQueue.length > 0 ? `+${popupQueue.length} more queued` : 'New real-time alert';
+    function handleBackdropClick(e) {
+      if (e.target.id === 'popupBackdrop') closeDetailsModal();
     }
 
-    async function acknowledgePopup() {
-      if (!activePopup) return;
-      const readAlert = activePopup;
+    function closeDetailsModal() {
+      document.getElementById('popupBackdrop').classList.remove('show');
+      selectedAlert = null;
+    }
 
-      // Immediately move to local inbox + sync with backend
-      inboxItems.unshift(readAlert);
-      renderInbox();
-      bumpInboxBadge();
+    async function moveAlertToInbox(alert) {
+      if (!alert) return;
+      unreadAlerts = unreadAlerts.filter((a) => a.id !== alert.id);
+      if (!inboxItems.some((a) => a.id === alert.id)) {
+        inboxItems.unshift(alert);
+      }
+      renderAnomalySidePanel(false);
+      renderInbox(true);
 
       try {
-        await fetch(`/api/alerts/${readAlert.id}/read`, { method: 'POST' });
+        await fetch(`/api/alerts/${encodeURIComponent(alert.id)}/read`, { method: 'POST' });
       } catch (e) {}
-
-      // Close briefly then display next queued pop-up if any
-      document.getElementById('popupBackdrop').classList.remove('show');
-      activePopup = null;
-      setTimeout(() => showNextPopup(), 260);
     }
 
-    function inspectCurrentPopupNode() {
-      if (!activePopup) return;
-      const nodeId = activePopup.primary_node;
-      acknowledgePopup();
-      focusNodeInGraph(nodeId);
+    async function markSelectedAsReadOnly() {
+      if (!selectedAlert) return;
+      const alert = selectedAlert;
+      closeDetailsModal();
+      await moveAlertToInbox(alert);
     }
 
-    function focusNodeInGraph(nodeId) {
+    async function focusSelectedAnomalyNode() {
+      if (!selectedAlert) return;
+      const alert = selectedAlert;
+      closeDetailsModal();
+
+      // 1. Archive the anomaly into the Inbox immediately
+      await moveAlertToInbox(alert);
+
+      // 2. Freeze live graph updates and focus on the anomalous node
+      enterFocusMode(alert);
+    }
+
+    function enterFocusMode(alert) {
       if (!graphOpen) toggleGraphView();
       toggleInbox(false);
+
+      graphFrozen = true;
+      pausedUpdatesCount = 0;
+
+      document.getElementById('cy').classList.add('frozen');
+      document.getElementById('focusBanner').classList.add('visible');
+      document.getElementById('resumeToolbarBtn').style.display = 'inline-flex';
+      document.getElementById('focusTargetLabel').textContent =
+        `Focused: ${alert.short_node} (${alert.type})`;
+      updateFocusBufferUI();
+
       setTimeout(() => {
         if (!cy) return;
-        const node = cy.getElementById(nodeId);
-        if (node.length) {
-          cy.animate({ center: { eles: node }, zoom: 1.7 }, { duration: 450 });
-          node.select();
-          node.emit('tap');
+        cy.elements().removeClass('dimmed focused-target');
+
+        let node = cy.getElementById(alert.primary_node);
+        // If node already aged out of the sliding window before clicking, render a temporary snapshot node
+        if (!node.length) {
+          const cx = cy.width() / 2 || 400;
+          const cyMid = cy.height() / 2 || 260;
+          node = cy.add({
+            group: 'nodes',
+            data: {
+              id: alert.primary_node,
+              label: alert.short_node,
+              degree: 6,
+              in_degree: 0,
+              out_degree: 0,
+              tx_count: 1,
+              total_in_btc: 0,
+              total_out_btc: 0,
+              is_anomaly: true,
+              anomaly_type: alert.type
+            },
+            position: { x: cx, y: cyMid }
+          });
+          document.getElementById('focusBufferText').textContent =
+            'Node aged out of active window — showing archived reference node';
         }
-      }, 280);
+
+        // Highlight node + its 1-hop ego neighbourhood, softly dim unrelated nodes
+        const neighborhood = node.closedNeighborhood();
+        cy.elements().difference(neighborhood).addClass('dimmed');
+        node.addClass('focused-target');
+        node.select();
+
+        cy.animate({
+          center: { eles: node },
+          zoom: 1.75
+        }, { duration: 480 });
+
+        showNodeInspector(node.data());
+      }, 220);
     }
 
-    function bumpInboxBadge() {
+    function updateFocusBufferUI() {
+      const el = document.getElementById('focusBufferText');
+      if (pausedUpdatesCount === 0) {
+        el.textContent = 'Live graph updates paused while inspecting';
+      } else {
+        el.textContent = `Live graph paused · ${pausedUpdatesCount} update(s) held in background`;
+      }
+    }
+
+    async function resumeLiveGraph() {
+      graphFrozen = false;
+      pausedUpdatesCount = 0;
+
+      document.getElementById('cy').classList.remove('frozen');
+      document.getElementById('focusBanner').classList.remove('visible');
+      document.getElementById('resumeToolbarBtn').style.display = 'none';
+      closeInspector();
+
+      if (cy) cy.elements().removeClass('dimmed focused-target');
+
+      // Resync cleanly with the latest live graph snapshot from FastAPI
+      try {
+        const res = await fetch('/api/snapshot');
+        if (res.ok) {
+          const snapshot = await res.json();
+          replaceGraphFromSnapshot(snapshot);
+          updateStats(snapshot.stats);
+        }
+      } catch (e) {
+        fitGraph();
+      }
+    }
+
+    // 4. Anomaly Inbox Rendering
+    function renderInbox(bump = false) {
+      const list = document.getElementById('inboxList');
       const badge = document.getElementById('inboxBadge');
       badge.textContent = inboxItems.length;
-      badge.classList.add('bump');
-      setTimeout(() => badge.classList.remove('bump'), 350);
-    }
+      document.getElementById('kpiInboxSummary').textContent =
+        `${inboxItems.length} archived in Anomaly Inbox`;
 
-    function renderInbox() {
-      const list = document.getElementById('inboxList');
-      document.getElementById('inboxBadge').textContent = inboxItems.length;
+      if (bump) {
+        badge.classList.add('bump');
+        setTimeout(() => badge.classList.remove('bump'), 350);
+      }
+
       if (inboxItems.length === 0) {
-        list.innerHTML = `<div class="empty-state">No read anomalies yet. Acknowledged pop-ups will appear here.</div>`;
+        list.innerHTML = `<div class="empty-state">No archived anomalies yet. Click an alert to focus or mark it as read.</div>`;
         return;
       }
 
@@ -1018,17 +1409,24 @@
         return `
           <div class="inbox-item">
             <div class="inbox-meta">
-              <span class="inbox-type">${item.type} · ${item.score}/100</span>
+              <span class="inbox-type">${escapeHtml(item.type)} · ${item.score}/100</span>
               <span class="inbox-time">${timeStr}</span>
             </div>
-            <div class="inbox-desc">${item.summary}</div>
+            <div class="inbox-desc">${escapeHtml(item.summary)}</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span class="mono" style="color:var(--muted);">${item.short_node}</span>
-              <button class="btn btn-soft" style="padding:5px 10px; font-size:11.5px;" onclick="focusNodeInGraph('${item.primary_node}')">Locate in Graph</button>
+              <span class="mono" style="color:var(--muted);">${escapeHtml(item.short_node)}</span>
+              <button class="btn btn-soft" style="padding:5px 10px; font-size:11.5px;" onclick="focusFromInbox('${escapeHtml(item.id)}')">
+                Focus Node
+              </button>
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    function focusFromInbox(alertId) {
+      const item = inboxItems.find((a) => a.id === alertId);
+      if (item) enterFocusMode(item);
     }
 
     function toggleInbox(open) {
@@ -1036,7 +1434,7 @@
       document.getElementById('drawerOverlay').classList.toggle('open', open);
     }
 
-    // 4. Stats, Feed, Controls & WebSocket
+    // 5. Stats, Feed, Controls & WebSocket
     function updateStats(s) {
       if (!s) return;
       document.getElementById('kpiNodes').textContent = s.active_nodes;
@@ -1054,7 +1452,7 @@
       row.className = `feed-row ${tx.is_anomaly ? 'flagged' : ''}`;
       row.innerHTML = `
         <div>
-          <strong class="mono">${tx.sender}</strong>
+          <strong class="mono">${escapeHtml(tx.sender)}</strong>
           <span style="color:var(--muted); font-size:12px;"> → ${tx.outputs} output(s)</span>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
@@ -1109,19 +1507,23 @@
           setFeedStatus(msg.status);
           upsertGraphElements(msg.snapshot.nodes, msg.snapshot.edges);
           updateStats(msg.snapshot.stats);
+          unreadAlerts = msg.unread || [];
           inboxItems = msg.inbox || [];
-          renderInbox();
+          renderAnomalySidePanel(false);
+          renderInbox(false);
           setTimeout(() => fitGraph(), 600);
         } else if (msg.type === 'graph_update') {
           upsertGraphElements(msg.added_nodes, msg.added_edges, msg.removed_nodes, msg.removed_edges);
           updateStats(msg.stats);
           appendTxFeed(msg.tx_summary);
-          enqueueAlerts(msg.alerts);
+          addIncomingAlerts(msg.alerts);
         } else if (msg.type === 'status') {
           setFeedStatus(msg.status);
-        } else if (msg.type === 'inbox_updated') {
-          inboxItems = msg.inbox;
-          renderInbox();
+        } else if (msg.type === 'alerts_synced') {
+          unreadAlerts = msg.unread || [];
+          inboxItems = msg.inbox || [];
+          renderAnomalySidePanel(false);
+          renderInbox(false);
         }
       };
 
