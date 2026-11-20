@@ -42,9 +42,9 @@ async def broadcast(payload: dict):
 
 async def handle_graph_update(update: dict):
     for alert in update.get("alerts", []):
-        unread_alerts.append(alert)
-        if len(unread_alerts) > 30:
-            unread_alerts.pop(0)
+        unread_alerts.insert(0, alert)
+        if len(unread_alerts) > 40:
+            unread_alerts.pop()
     await broadcast(update)
 
 
@@ -82,9 +82,15 @@ async def serve_dashboard():
     return FileResponse(FRONTEND_INDEX)
 
 
+@app.get("/api/snapshot")
+async def get_graph_snapshot():
+    """Returns the latest live graph state when resuming from Focus/Paused mode."""
+    return graph_engine.get_snapshot()
+
+
 @app.post("/api/alerts/{alert_id}/read")
 async def mark_alert_read(alert_id: str):
-    """Moves a read pop-up alert into the permanent Anomaly Inbox."""
+    """Moves an active side-panel anomaly into the permanent Anomaly Inbox."""
     target = None
     for idx, item in enumerate(unread_alerts):
         if item["id"] == alert_id:
@@ -96,7 +102,13 @@ async def mark_alert_read(alert_id: str):
         inbox_alerts.insert(0, target)
         if len(inbox_alerts) > 100:
             inbox_alerts.pop()
-        await broadcast({"type": "inbox_updated", "inbox": inbox_alerts})
+        await broadcast(
+            {
+                "type": "alerts_synced",
+                "unread": unread_alerts,
+                "inbox": inbox_alerts,
+            }
+        )
         return {"status": "moved_to_inbox", "alert": target}
     return {"status": "not_found"}
 
@@ -123,12 +135,12 @@ async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
     connected_clients.add(ws)
     try:
-        # Send immediate initial graph snapshot + inbox history
         await ws.send_json(
             {
                 "type": "init",
                 "status": feed_status,
                 "snapshot": graph_engine.get_snapshot(),
+                "unread": unread_alerts,
                 "inbox": inbox_alerts,
             }
         )
