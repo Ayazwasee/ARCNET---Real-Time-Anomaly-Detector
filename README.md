@@ -1,6 +1,6 @@
-# ARCNET---Real-Time-Anomaly-Detector
+# ARCNET: A Real Time Anomaly Detector
 
-**Real-Time Dynamic Graph Analysis for Early Detection of Anomalous Behaviour in Evolving Networks (Phase 1)**
+**Real-Time Dynamic Graph Analysis for Early Detection of Anomalous Behaviour in Evolving Networks**
 
 ARCNET is a real-time dynamic graph analytics platform that ingests live unconfirmed Bitcoin transactions from Blockchain.com, maintains a continuously evolving directed weighted transaction graph, and flags structural and volumetric anomalies as they emerge—without rebuilding the graph from scratch.
 
