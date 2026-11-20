@@ -26,7 +26,7 @@
       --rose: #f43f5e;
       --rose-soft: #fff1f2;
       --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-      --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.08);
+      --shadow-md: 0 10px 26px -6px rgba(15, 23, 42, 0.08);
       --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.16);
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -51,7 +51,7 @@
       top: 0;
       z-index: 40;
       backdrop-filter: blur(14px);
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       border-bottom: 1px solid var(--border);
       padding: 14px 28px;
       display: flex;
@@ -60,11 +60,7 @@
       gap: 16px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .brand { display: flex; align-items: center; gap: 12px; }
 
     .brand-mark {
       width: 36px;
@@ -75,19 +71,15 @@
       place-items: center;
       color: #fff;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 14px;
+      letter-spacing: 0.02em;
       box-shadow: 0 6px 14px rgba(37, 99, 235, 0.28);
     }
 
     .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
     .brand p { font-size: 12px; color: var(--muted); }
 
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
     .status-pill {
       display: inline-flex;
@@ -153,18 +145,29 @@
       background: var(--primary);
       color: #fff;
       border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
     }
     .btn-primary:hover {
       background: #1d4ed8;
       border-color: #1d4ed8;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
     }
 
     .btn-soft {
       background: var(--primary-soft);
       color: var(--primary);
       border-color: #bfdbfe;
+    }
+
+    .btn-live {
+      background: linear-gradient(135deg, var(--primary), var(--sky));
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
+    }
+    .btn-live:hover {
+      filter: brightness(1.06);
+      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38);
     }
 
     .badge {
@@ -180,11 +183,12 @@
       place-items: center;
       transition: transform 0.35s var(--ease);
     }
+    .badge.soft-blue { background: var(--primary); }
     .badge.bump { transform: scale(1.32); }
 
     /* Main Container */
     .container {
-      max-width: 1360px;
+      max-width: 1420px;
       margin: 0 auto;
       padding: 24px 28px 48px;
       display: flex;
@@ -210,12 +214,13 @@
     }
     .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
     .kpi-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .kpi-value { font-size: 28px; font-weight: 700; margin-top: 8px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .kpi-value { font-size: 28px; font-weight: 700; margin-top: 8px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; transition: transform 0.25s var(--ease); }
+    .kpi-value.bump { transform: scale(1.08); }
     .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
     .kpi-value.accent { color: var(--primary); }
     .kpi-value.danger { color: var(--rose); }
 
-    /* Graph Toggle Card */
+    /* Cards */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -234,8 +239,19 @@
       flex-wrap: wrap;
     }
 
-    .card-title-group h2 { font-size: 15px; font-weight: 700; }
+    .card-title-group h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
     .card-title-group p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Workspace Grid: Graph (Left) + Live Anomalies Side Panel (Right) */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 365px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1080px) {
+      .workspace-grid { grid-template-columns: 1fr; }
+    }
 
     /* Toggle Switch */
     .toggle-wrap {
@@ -301,21 +317,153 @@
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; }
 
+    .canvas-stage { position: relative; }
+
     #cy {
       width: 100%;
-      height: 500px;
-      background:
-        radial-gradient(#cbd5e1 1px, transparent 1px);
+      height: 520px;
+      background: radial-gradient(#cbd5e1 1px, transparent 1px);
       background-size: 24px 24px;
       background-color: #fcfdff;
+      transition: box-shadow 0.35s var(--ease);
     }
+    #cy.frozen {
+      box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.45);
+      background-color: #fffdf7;
+    }
+
+    /* Focus Mode / Paused Floating Banner */
+    .focus-banner {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translate(-50%, -22px);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px 10px 18px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      border: 1px solid #fde68a;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s var(--ease);
+      max-width: 92%;
+    }
+    .focus-banner.visible {
+      transform: translate(-50%, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .focus-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #b45309;
+      background: var(--amber-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .focus-meta {
+      font-size: 12.5px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .focus-meta span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Live Anomalies Side Panel */
+    .anomaly-panel {
+      display: flex;
+      flex-direction: column;
+      height: 642px;
+    }
+    @media (max-width: 1080px) { .anomaly-panel { height: auto; max-height: 460px; } }
+
+    .anomaly-panel-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fafcff;
+    }
+
+    .anomaly-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--rose);
+      border-radius: 13px;
+      padding: 13px 14px;
+      cursor: pointer;
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
+      animation: cardPopIn 0.4s var(--ease);
+    }
+    .anomaly-card.medium { border-left-color: var(--amber); }
+    .anomaly-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: #fecdd3;
+    }
+    @keyframes cardPopIn {
+      from { opacity: 0; transform: translateX(16px) scale(0.98); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+
+    .anomaly-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .anomaly-card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .score-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--rose-soft);
+      color: var(--rose);
+      white-space: nowrap;
+    }
+    .anomaly-card.medium .score-tag { background: var(--amber-soft); color: #b45309; }
+    .anomaly-card-summary {
+      font-size: 12px;
+      line-height: 1.48;
+      color: #475569;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 9px;
+    }
+    .anomaly-card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .inspect-link { color: var(--primary); font-weight: 600; }
 
     /* Node Inspector Floating Card */
     .node-inspector {
       position: absolute;
       right: 18px;
       bottom: 18px;
-      width: 290px;
+      width: 295px;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border);
@@ -326,6 +474,7 @@
       opacity: 0;
       pointer-events: none;
       transition: all 0.3s var(--ease);
+      z-index: 15;
     }
     .node-inspector.visible {
       transform: translateY(0);
@@ -365,7 +514,7 @@
     @media (max-width: 960px) { .split-grid { grid-template-columns: 1fr; } }
 
     .feed-list {
-      max-height: 290px;
+      max-height: 270px;
       overflow-y: auto;
       padding: 8px 16px 14px;
     }
@@ -401,42 +550,43 @@
       cursor: pointer;
     }
 
-    /* Real-Time Anomaly Pop-Up Modal */
+    /* On-Click Anomaly Detail Pop-Up Modal */
     .popup-backdrop {
       position: fixed;
       inset: 0;
       z-index: 90;
-      background: rgba(15, 23, 42, 0.22);
+      background: rgba(15, 23, 42, 0.24);
       backdrop-filter: blur(4px);
       display: grid;
       place-items: center;
       padding: 20px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s var(--ease);
+      transition: opacity 0.28s var(--ease);
     }
     .popup-backdrop.show { opacity: 1; pointer-events: auto; }
 
     .popup-card {
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       background: var(--surface);
       border: 1px solid #fecdd3;
       border-radius: 20px;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
-      transform: translateY(24px) scale(0.96);
-      transition: transform 0.4s var(--ease);
+      transform: translateY(20px) scale(0.96);
+      transition: transform 0.36s var(--ease);
     }
     .popup-backdrop.show .popup-card { transform: translateY(0) scale(1); }
 
     .popup-header {
       background: linear-gradient(135deg, #fff1f2, #ffffff);
-      padding: 18px 22px;
+      padding: 16px 22px;
       border-bottom: 1px solid #ffe4e6;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
     }
     .severity-pill {
       padding: 4px 10px;
@@ -448,6 +598,8 @@
       background: var(--rose);
       color: #fff;
     }
+    .severity-pill.medium { background: var(--amber); }
+
     .popup-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
     .popup-title { font-size: 18px; font-weight: 700; color: var(--text); }
     .popup-summary { font-size: 14px; line-height: 1.55; color: #334155; }
@@ -473,6 +625,7 @@
     }
     .metric-chip span { display: block; font-size: 11px; color: var(--muted); }
     .metric-chip strong { font-size: 14px; color: var(--text); }
+
     .popup-footer {
       padding: 14px 22px;
       background: #f8fafc;
@@ -481,8 +634,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
+      flex-wrap: wrap;
     }
-    .queue-hint { font-size: 12px; color: var(--muted); font-weight: 500; }
 
     /* Anomaly Inbox Slide-Over Drawer */
     .drawer-overlay {
@@ -501,7 +654,7 @@
       top: 0;
       right: 0;
       height: 100vh;
-      width: 420px;
+      width: 430px;
       max-width: 92vw;
       z-index: 85;
       background: var(--surface);
@@ -534,11 +687,13 @@
     .inbox-type { font-size: 13px; font-weight: 700; color: var(--rose); }
     .inbox-time { font-size: 11px; color: var(--muted); }
     .inbox-desc { font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 10px; }
+
     .empty-state {
       text-align: center;
-      padding: 48px 20px;
+      padding: 46px 20px;
       color: var(--muted);
       font-size: 13px;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -546,7 +701,7 @@
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark">CP</div>
+      <div class="brand-mark">AN</div>
       <div>
         <h1>ARCNET</h1>
         <p>Real-Time Dynamic Blockchain Graph & Anomaly Detector</p>
@@ -561,7 +716,7 @@
       <button class="btn btn-soft" onclick="simulateAnomaly()">+ Test Anomaly</button>
       <button class="btn" onclick="toggleInbox(true)">
         Anomaly Inbox
-        <span id="inboxBadge" class="badge">0</span>
+        <span id="inboxBadge" class="badge soft-blue">0</span>
       </button>
     </div>
   </header>
@@ -587,56 +742,95 @@
       <div class="kpi-card">
         <div class="kpi-label">Flagged Anomalies</div>
         <div id="kpiAnomalies" class="kpi-value danger">0</div>
-        <div class="kpi-sub">Acknowledged alerts stored in Inbox</div>
+        <div id="kpiInboxSummary" class="kpi-sub">0 unread · 0 in Inbox</div>
       </div>
     </section>
 
-    <!-- Toggleable Active Real-Time Graph Card -->
-    <section class="card">
-      <div class="card-header">
-        <div class="card-title-group">
-          <h2>Active Real-Time Network Graph</h2>
-          <p>Toggle live interactive topology — zoom, pan, drag, or click any wallet node to inspect metrics.</p>
+    <!-- Main Workspace: Active Graph (Left) + Live Anomalies Side Panel (Right) -->
+    <section class="workspace-grid">
+      <!-- Active Real-Time Graph Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>Active Real-Time Network Graph</h2>
+            <p>Zoom, pan, drag, or click any wallet node to inspect metrics.</p>
+          </div>
+          <div class="toggle-wrap" onclick="toggleGraphView()">
+            <span id="graphToggleLabel">Hide Active Graph</span>
+            <div id="graphSwitch" class="switch active"></div>
+          </div>
         </div>
-        <div class="toggle-wrap" onclick="toggleGraphView()">
-          <span id="graphToggleLabel">Show Active Graph</span>
-          <div id="graphSwitch" class="switch active"></div>
+
+        <div id="graphShell" class="graph-shell open">
+          <div class="graph-inner">
+            <div class="graph-toolbar">
+              <div class="legend">
+                <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
+                <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Active Hub</div>
+                <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Node</div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button id="resumeToolbarBtn" class="btn btn-live" style="display:none;" onclick="resumeLiveGraph()">
+                  ↺ Back to Live Graph
+                </button>
+                <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
+                <button class="btn" onclick="runSmoothLayout(true)">Re-Layout</button>
+                <button class="btn" onclick="fitGraph()">Fit View</button>
+              </div>
+            </div>
+
+            <div class="canvas-stage">
+              <!-- Floating Inspection / Paused Banner -->
+              <div id="focusBanner" class="focus-banner">
+                <span class="focus-pill">⏸ Graph Paused</span>
+                <div class="focus-meta">
+                  <strong id="focusTargetLabel">Inspecting anomaly node</strong>
+                  <span id="focusBufferText">Live updates held while inspecting</span>
+                </div>
+                <button class="btn btn-live" style="padding:7px 13px; font-size:12.5px;" onclick="resumeLiveGraph()">
+                  Back to Live Graph
+                </button>
+              </div>
+
+              <div id="cy"></div>
+
+              <!-- Interactive Node Inspector -->
+              <div id="nodeInspector" class="node-inspector">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong style="font-size:13px;">Wallet Node Details</strong>
+                  <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
+                </div>
+                <div id="inspAddr" class="inspector-addr"></div>
+                <div class="inspector-grid">
+                  <div class="inspector-stat"><span>In / Out Degree</span><strong id="inspDeg">0 / 0</strong></div>
+                  <div class="inspector-stat"><span>Tx Count</span><strong id="inspTx">0</strong></div>
+                  <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
+                  <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div id="graphShell" class="graph-shell open">
-        <div class="graph-inner">
-          <div class="graph-toolbar">
-            <div class="legend">
-              <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
-              <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Active Hub</div>
-              <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Node</div>
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
-              <button class="btn" onclick="runSmoothLayout()">Re-Layout</button>
-              <button class="btn" onclick="fitGraph()">Fit View</button>
-            </div>
-          </div>
-
-          <div id="cy"></div>
-
-          <!-- Interactive Node Inspector -->
-          <div id="nodeInspector" class="node-inspector">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="font-size:13px;">Wallet Node Details</strong>
-              <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
-            </div>
-            <div id="inspAddr" class="inspector-addr"></div>
-            <div class="inspector-grid">
-              <div class="inspector-stat"><span>In / Out Degree</span><strong id="inspDeg">0 / 0</strong></div>
-              <div class="inspector-stat"><span>Tx Count</span><strong id="inspTx">0</strong></div>
-              <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
-              <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
-            </div>
+      <!-- Live Anomalies Side Panel -->
+      <aside class="card anomaly-panel">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2>
+              Live Anomalies
+              <span id="sidePanelBadge" class="badge">0</span>
+            </h2>
+            <p>Click any alert to inspect details & focus node</p>
           </div>
         </div>
-      </div>
+        <div id="anomalySideList" class="anomaly-panel-list">
+          <div class="empty-state">
+            Monitoring live Bitcoin network...<br />
+            Detected anomalies will appear here in real time.
+          </div>
+        </div>
+      </aside>
     </section>
 
     <!-- Live Stream Feed + Engine Controls -->
@@ -666,36 +860,36 @@
             <input id="winSlider" type="range" min="60" max="420" step="30" value="180" oninput="updateConfigUI()" onchange="pushConfig()" />
           </div>
           <div class="slider-row">
-            <label><span>Whale Alert Threshold</span><span id="whaleVal" class="mono">5.0 BTC</span></label>
-            <input id="whaleSlider" type="range" min="1" max="25" step="0.5" value="5" oninput="updateConfigUI()" onchange="pushConfig()" />
+            <label><span>Whale Alert Threshold</span><span id="whaleVal" class="mono">2.0 BTC</span></label>
+            <input id="whaleSlider" type="range" min="0.5" max="25" step="0.5" value="2" oninput="updateConfigUI()" onchange="pushConfig()" />
           </div>
           <p style="font-size:12px; color:var(--muted); line-height:1.5;">
-            Older edges automatically expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
+            Older edges expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
           </p>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Real-Time Anomaly Pop-Up -->
-  <div id="popupBackdrop" class="popup-backdrop">
+  <!-- On-Click Anomaly Details Pop-Up -->
+  <div id="popupBackdrop" class="popup-backdrop" onclick="handleBackdropClick(event)">
     <div class="popup-card">
       <div class="popup-header">
-        <span class="severity-pill" id="popupSeverity">HIGH SEVERITY</span>
-        <span id="popupScore" class="mono" style="font-weight:700; color:var(--rose);">Score: 92/100</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="severity-pill" id="popupSeverity">HIGH SEVERITY</span>
+          <span id="popupScore" class="mono" style="font-weight:700; color:var(--rose);">Score: 92/100</span>
+        </div>
+        <button class="btn" style="padding:4px 10px; font-size:12px;" onclick="closeDetailsModal()">✕</button>
       </div>
       <div class="popup-body">
-        <div id="popupTitle" class="popup-title">Anomaly Detected</div>
+        <div id="popupTitle" class="popup-title">Anomaly Details</div>
         <div id="popupSummary" class="popup-summary"></div>
         <div id="popupExplain" class="popup-explain"></div>
         <div id="popupMetrics" class="metric-chips"></div>
       </div>
       <div class="popup-footer">
-        <span id="queueHint" class="queue-hint"></span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn" onclick="inspectCurrentPopupNode()">Focus Node</button>
-          <button class="btn btn-primary" onclick="acknowledgePopup()">Mark as Read → Inbox</button>
-        </div>
+        <button class="btn" onclick="markSelectedAsReadOnly()">Mark as Read → Inbox</button>
+        <button class="btn btn-primary" onclick="focusSelectedAnomalyNode()">Focus Node & Pause Graph</button>
       </div>
     </div>
   </div>
@@ -706,12 +900,12 @@
     <div class="card-header">
       <div class="card-title-group">
         <h2>Anomaly Inbox</h2>
-        <p>Read & archived real-time alerts</p>
+        <p>Inspected & archived real-time alerts</p>
       </div>
       <button class="btn" onclick="toggleInbox(false)">Close</button>
     </div>
     <div id="inboxList" class="inbox-list">
-      <div class="empty-state">No read anomalies yet. Acknowledged pop-ups will appear here.</div>
+      <div class="empty-state">No archived anomalies yet. Click an alert to focus or mark it as read.</div>
     </div>
   </aside>
 
@@ -722,10 +916,10 @@
     let relayPingTimer = null;
     let relayFallbackTimer = null;
     let backendConnectTimer = null;
-    let lastRelaySentAt = 0;
+    let lastNormalRelayAt = 0;
 
     let backendConnected = false;
-    let clientMode = false; // Auto-enabled if Vercel /ws/stream fails to upgrade
+    let clientMode = false;
     let feedIsLive = false;
 
     let graphOpen = true;
@@ -738,15 +932,17 @@
     let inboxItems = [];
     let selectedAlert = null;
 
-    // Lightweight client-side dynamic graph state (used only if backend WS is unavailable)
+    // Client-side dynamic graph state (used automatically when running serverless / without backend WS)
     const clientGraph = {
-      nodes: new Map(),      // id -> node data
-      edges: new Map(),      // id -> {id, source, target, weight, count, timestamp, tx_hash}
+      nodes: new Map(),
+      edges: new Map(),
       txTimes: [],
       cooldowns: new Map(),
       windowSeconds: 180,
-      whaleBtcThreshold: 5.0,
-      fanoutThreshold: 10,
+      whaleBtcThreshold: 2.0,
+      fanoutThreshold: 6,
+      faninThreshold: 5,
+      zThreshold: 2.6,
       maxNodes: 110
     };
 
@@ -769,6 +965,43 @@
         return true;
       }
       return false;
+    }
+
+    // Single source of truth for Flagged Anomalies KPI, Side Panel Badge & Inbox Badge
+    function syncAllCounters(bumpSide = false, bumpInbox = false) {
+      const unreadCount = unreadAlerts.length;
+      const archivedCount = inboxItems.length;
+      const totalFlagged = unreadCount + archivedCount;
+
+      const kpiEl = document.getElementById('kpiAnomalies');
+      const kpiSub = document.getElementById('kpiInboxSummary');
+      const sideBadge = document.getElementById('sidePanelBadge');
+      const inboxBadge = document.getElementById('inboxBadge');
+
+      if (kpiEl) {
+        kpiEl.textContent = totalFlagged;
+        if (bumpSide) {
+          kpiEl.classList.add('bump');
+          setTimeout(() => kpiEl.classList.remove('bump'), 300);
+        }
+      }
+      if (kpiSub) {
+        kpiSub.textContent = `${unreadCount} unread · ${archivedCount} in Inbox`;
+      }
+      if (sideBadge) {
+        sideBadge.textContent = unreadCount;
+        if (bumpSide) {
+          sideBadge.classList.add('bump');
+          setTimeout(() => sideBadge.classList.remove('bump'), 350);
+        }
+      }
+      if (inboxBadge) {
+        inboxBadge.textContent = archivedCount;
+        if (bumpInbox) {
+          inboxBadge.classList.add('bump');
+          setTimeout(() => inboxBadge.classList.remove('bump'), 350);
+        }
+      }
     }
 
     // 1. Initialize Cytoscape Interactive Graph
@@ -977,18 +1210,28 @@
       setTimeout(() => fitGraph(), 480);
     }
 
-    // 3. Client-Side Dynamic Graph Engine (Fail-Safe if Vercel WS isn't active)
+    // 3. Fast Pre-Check so Anomalous Mainnet Transactions NEVER Get Throttled Out
+    function isPotentiallyAnomalousTx(tx) {
+      const inputs = tx.inputs || [];
+      const outs = tx.out || [];
+      if (outs.length >= clientGraph.fanoutThreshold) return true;
+      if (inputs.length >= clientGraph.faninThreshold) return true;
+      let totalSats = 0;
+      for (let i = 0; i < outs.length; i++) totalSats += (outs[i]?.value || 0);
+      if (totalSats / 1e8 >= clientGraph.whaleBtcThreshold) return true;
+      return false;
+    }
+
+    // 4. Client-Side Dynamic Graph + All 4 LSGA Anomaly Detectors
     function clientCooldown(key) {
       const now = Date.now() / 1000;
       const last = clientGraph.cooldowns.get(key) || 0;
-      if (now - last < 25) return true;
+      if (now - last < 20) return true;
       clientGraph.cooldowns.set(key, now);
       return false;
     }
 
-    function clientComputeStats(nowSec) {
-      clientGraph.txTimes = clientGraph.txTimes.filter((t) => nowSec - t <= 10);
-      // Approximate connected components via BFS
+    function clientBuildUndirectedAdj() {
       const adj = new Map();
       clientGraph.nodes.forEach((_, id) => adj.set(id, []));
       clientGraph.edges.forEach((e) => {
@@ -997,6 +1240,43 @@
           adj.get(e.target).push(e.source);
         }
       });
+      return adj;
+    }
+
+    function clientComponentOf(adj, startId) {
+      const visited = new Set([startId]);
+      const q = [startId];
+      while (q.length) {
+        const cur = q.shift();
+        for (const nb of adj.get(cur) || []) {
+          if (!visited.has(nb)) { visited.add(nb); q.push(nb); }
+        }
+      }
+      return visited;
+    }
+
+    function clientCheckClusterBridge(senders, receivers) {
+      if (clientGraph.nodes.size < 8) return null;
+      const adj = clientBuildUndirectedAdj();
+      for (const u of senders.slice(0, 3)) {
+        if (!adj.has(u)) continue;
+        const compU = clientComponentOf(adj, u);
+        if (compU.size < 3) continue;
+        for (const v of receivers.slice(0, 5)) {
+          if (adj.has(v) && !compU.has(v)) {
+            const compV = clientComponentOf(adj, v);
+            if (compV.size >= 3) {
+              return { u, v, sizeU: compU.size, sizeV: compV.size };
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    function clientComputeStats(nowSec) {
+      clientGraph.txTimes = clientGraph.txTimes.filter((t) => nowSec - t <= 10);
+      const adj = clientBuildUndirectedAdj();
       const visited = new Set();
       let components = 0;
       for (const id of adj.keys()) {
@@ -1042,8 +1322,12 @@
       let totalBtc = 0;
       recvMap.forEach((v) => { totalBtc += v; });
 
+      // Check structural cluster bridge BEFORE adding new edges
+      const receiverList = [...recvMap.keys()];
+      const bridgeInfo = clientCheckClusterBridge(senders, receiverList);
+
       const cappedSenders = senders.slice(0, 4);
-      const cappedReceivers = [...recvMap.keys()].sort((a, b) => recvMap.get(b) - recvMap.get(a)).slice(0, 12);
+      const cappedReceivers = receiverList.sort((a, b) => recvMap.get(b) - recvMap.get(a)).slice(0, 12);
       const primarySender = cappedSenders[0];
 
       const touchedNodes = new Set();
@@ -1054,7 +1338,7 @@
           if (!clientGraph.nodes.has(id)) {
             clientGraph.nodes.set(id, {
               id, label: shortAddr(id), degree: 0, in_degree: 0, out_degree: 0,
-              total_in_btc: 0, total_out_btc: 0, tx_count: 0, is_anomaly: false, last_seen: now
+              total_in_btc: 0, total_out_btc: 0, tx_count: 0, is_anomaly: false, anomaly_type: null, last_seen: now
             });
           }
           const n = clientGraph.nodes.get(id);
@@ -1071,7 +1355,9 @@
           e.count += 1;
           e.timestamp = now;
         } else {
-          clientGraph.edges.set(eid, { id: eid, source: u, target: v, weight: +btc.toFixed(5), count: 1, timestamp: now, tx_hash: txHash.slice(0, 10) });
+          clientGraph.edges.set(eid, {
+            id: eid, source: u, target: v, weight: +btc.toFixed(5), count: 1, timestamp: now, tx_hash: txHash.slice(0, 10)
+          });
         }
         touchedNodes.add(u);
         touchedNodes.add(v);
@@ -1090,9 +1376,9 @@
 
       // Prune expired edges
       const cutoff = now - clientGraph.windowSeconds;
-      const removedEdges = [];
+      const removedEdgesSet = new Set();
       clientGraph.edges.forEach((e, eid) => {
-        if (e.timestamp < cutoff) { clientGraph.edges.delete(eid); removedEdges.push(eid); }
+        if (e.timestamp < cutoff) { clientGraph.edges.delete(eid); removedEdgesSet.add(eid); }
       });
 
       // Recompute degrees & drop isolated nodes
@@ -1103,58 +1389,128 @@
         if (u && v) { u.out_degree++; u.degree++; v.in_degree++; v.degree++; }
       });
 
-      const removedNodes = [];
+      const removedNodesSet = new Set();
       clientGraph.nodes.forEach((n, id) => {
-        if (n.degree === 0) { clientGraph.nodes.delete(id); removedNodes.push(id); }
+        if (n.degree === 0) { clientGraph.nodes.delete(id); removedNodesSet.add(id); }
       });
 
       if (clientGraph.nodes.size > clientGraph.maxNodes) {
         const excess = clientGraph.nodes.size - clientGraph.maxNodes;
-        const sorted = [...clientGraph.nodes.values()].sort((a, b) => (a.is_anomaly - b.is_anomaly) || (a.last_seen - b.last_seen));
+        const sorted = [...clientGraph.nodes.values()].sort(
+          (a, b) => (Number(a.is_anomaly) - Number(b.is_anomaly)) || (a.last_seen - b.last_seen)
+        );
         sorted.slice(0, excess).forEach((n) => {
           clientGraph.nodes.delete(n.id);
-          removedNodes.push(n.id);
+          removedNodesSet.add(n.id);
           clientGraph.edges.forEach((e, eid) => {
-            if (e.source === n.id || e.target === n.id) { clientGraph.edges.delete(eid); removedEdges.push(eid); }
+            if (e.source === n.id || e.target === n.id) {
+              clientGraph.edges.delete(eid);
+              removedEdgesSet.add(eid);
+            }
           });
         });
       }
 
-      // Detect anomalies
+      // Compute rolling Out-Degree Z-Score for primary sender
+      const outDegrees = [...clientGraph.nodes.values()].map((n) => n.out_degree);
+      const meanOut = outDegrees.length ? outDegrees.reduce((a, b) => a + b, 0) / outDegrees.length : 1;
+      const variance = outDegrees.length >= 5
+        ? outDegrees.reduce((acc, d) => acc + (d - meanOut) ** 2, 0) / outDegrees.length
+        : 1;
+      const stdOut = Math.sqrt(variance) || 1;
+      const senderNode = clientGraph.nodes.get(primarySender);
+      const senderOutDeg = senderNode ? senderNode.out_degree : 0;
+      const senderZ = (senderOutDeg - meanOut) / (stdOut + 1e-5);
+
       const alerts = [];
       const makeId = () => Math.random().toString(16).slice(2, 12);
 
-      if (rawOut >= clientGraph.fanoutThreshold && !clientCooldown(`fanout:${primarySender}`)) {
+      // 1. Fan-Out Star Burst (Raw fan-out OR Degree Z-score burst)
+      if (
+        (rawOut >= clientGraph.fanoutThreshold || (senderOutDeg >= 5 && senderZ >= clientGraph.zThreshold)) &&
+        !clientCooldown(`fanout:${primarySender}`)
+      ) {
         alerts.push({
-          id: makeId(), type: 'Fan-Out Star Burst', severity: rawOut >= 15 ? 'high' : 'medium',
-          score: Math.min(99, 68 + Math.min(rawOut, 28)), timestamp: now,
-          primary_node: primarySender, short_node: shortAddr(primarySender), tx_hash: txHash,
-          summary: `Wallet ${shortAddr(primarySender)} rapidly dispersed ${totalBtc.toFixed(4)} BTC across ${rawOut} destination wallets in a star topology.`,
-          explanation: 'A sudden spike in Out-Degree Centrality paired with low local clustering indicates automated batch payouts, mixing dispersion, or dust attacks.',
-          metrics: { 'Out-Degree (Raw)': rawOut, 'Volume (BTC)': +totalBtc.toFixed(4), 'Inputs': rawIn }
+          id: makeId(),
+          type: 'Fan-Out Star Burst',
+          severity: rawOut >= 12 ? 'high' : 'medium',
+          score: Math.min(99, Math.floor(68 + Math.min(rawOut, 24) + Math.max(0, senderZ * 2))),
+          timestamp: now,
+          primary_node: primarySender,
+          short_node: shortAddr(primarySender),
+          tx_hash: txHash,
+          summary: `Wallet ${shortAddr(primarySender)} dispersed ${totalBtc.toFixed(4)} BTC across ${rawOut} destination wallets (Out-Degree Z = ${senderZ.toFixed(2)}).`,
+          explanation: 'A sharp spike in Out-Degree Centrality paired with low local clustering indicates automated batch payouts, crypto-mixing distribution, or a dust attack.',
+          metrics: {
+            'Out-Degree (Raw)': rawOut,
+            'Degree Z-Score': +senderZ.toFixed(2),
+            'Volume (BTC)': +totalBtc.toFixed(4),
+            'Inputs': rawIn
+          }
         });
       }
 
+      // 2. Whale Volume Spike
       if (totalBtc >= clientGraph.whaleBtcThreshold && !clientCooldown(`whale:${primarySender}`)) {
         alerts.push({
-          id: makeId(), type: 'Whale Volume Spike', severity: totalBtc >= clientGraph.whaleBtcThreshold * 3 ? 'high' : 'medium',
-          score: Math.min(99, Math.floor(72 + Math.log1p(totalBtc) * 8)), timestamp: now,
-          primary_node: primarySender, short_node: shortAddr(primarySender), tx_hash: txHash,
+          id: makeId(),
+          type: 'Whale Volume Spike',
+          severity: totalBtc >= clientGraph.whaleBtcThreshold * 3 ? 'high' : 'medium',
+          score: Math.min(99, Math.floor(72 + Math.log1p(totalBtc) * 8)),
+          timestamp: now,
+          primary_node: primarySender,
+          short_node: shortAddr(primarySender),
+          tx_hash: txHash,
           summary: `High-value transfer of ${totalBtc.toFixed(4)} BTC initiated by ${shortAddr(primarySender)} (threshold: ${clientGraph.whaleBtcThreshold} BTC).`,
-          explanation: 'Edge weight jumped sharply above the active sliding-window baseline, signaling institutional transfers or exchange cold-wallet sweeps.',
-          metrics: { 'Transfer (BTC)': +totalBtc.toFixed(4), 'Inputs / Outputs': `${rawIn} -> ${rawOut}` }
+          explanation: 'Edge weight jumped sharply above the active sliding-window baseline, signaling institutional treasury shifts or exchange cold-wallet sweeps.',
+          metrics: {
+            'Transfer (BTC)': +totalBtc.toFixed(4),
+            'Inputs / Outputs': `${rawIn} -> ${rawOut}`,
+            'Active Out-Degree': senderOutDeg
+          }
         });
       }
 
-      if (rawIn >= 8 && cappedReceivers.length && !clientCooldown(`fanin:${cappedReceivers[0]}`)) {
+      // 3. Fan-In Consolidation Surge
+      if (rawIn >= clientGraph.faninThreshold && cappedReceivers.length && !clientCooldown(`fanin:${cappedReceivers[0]}`)) {
         const tgt = cappedReceivers[0];
         alerts.push({
-          id: makeId(), type: 'Fan-In Consolidation Surge', severity: 'medium',
-          score: Math.min(95, 65 + rawIn * 2), timestamp: now,
-          primary_node: tgt, short_node: shortAddr(tgt), tx_hash: txHash,
+          id: makeId(),
+          type: 'Fan-In Consolidation Surge',
+          severity: rawIn >= 10 ? 'high' : 'medium',
+          score: Math.min(96, 66 + rawIn * 2),
+          timestamp: now,
+          primary_node: tgt,
+          short_node: shortAddr(tgt),
+          tx_hash: txHash,
           summary: `Wallet ${shortAddr(tgt)} consolidated funds from ${rawIn} distinct input wallets totaling ${totalBtc.toFixed(4)} BTC.`,
-          explanation: 'A sharp rise in In-Degree Centrality indicates multiple wallets sweeping balances into a single hub.',
-          metrics: { 'Input Wallets': rawIn, 'Volume (BTC)': +totalBtc.toFixed(4) }
+          explanation: 'A rapid rise in In-Degree Centrality signals multiple wallets sweeping balances into a single hub—typical of exchange deposit sweeps or coordinated aggregation.',
+          metrics: {
+            'Input Wallets': rawIn,
+            'Volume (BTC)': +totalBtc.toFixed(4),
+            'Active In-Degree': clientGraph.nodes.get(tgt)?.in_degree || 1
+          }
+        });
+      }
+
+      // 4. Structural Cluster Bridge
+      if (bridgeInfo && !clientCooldown(`bridge:${bridgeInfo.u}:${bridgeInfo.v}`)) {
+        alerts.push({
+          id: makeId(),
+          type: 'Structural Cluster Bridge',
+          severity: 'high',
+          score: 86,
+          timestamp: now,
+          primary_node: bridgeInfo.u,
+          short_node: shortAddr(bridgeInfo.u),
+          tx_hash: txHash,
+          summary: `Transaction linked two isolated wallet clusters (${bridgeInfo.sizeU} nodes <-> ${bridgeInfo.sizeV} nodes) via ${shortAddr(bridgeInfo.u)} -> ${shortAddr(bridgeInfo.v)}.`,
+          explanation: 'Shortest-path distance between two independent connected components dropped from infinity to 1, flagging a cross-cluster structural bridge.',
+          metrics: {
+            'Cluster A Size': bridgeInfo.sizeU,
+            'Cluster B Size': bridgeInfo.sizeV,
+            'Bridge Value (BTC)': +totalBtc.toFixed(4)
+          }
         });
       }
 
@@ -1167,7 +1523,7 @@
       const addedNodes = [...touchedNodes].map((id) => clientGraph.nodes.get(id)).filter(Boolean);
       const stats = clientComputeStats(now);
 
-      upsertGraphElements(addedNodes, addedEdges, removedNodes, removedEdges);
+      upsertGraphElements(addedNodes, addedEdges, [...removedNodesSet], [...removedEdgesSet]);
       updateStats(stats);
       appendTxFeed({ sender: shortAddr(primarySender), outputs: rawOut, btc: +totalBtc.toFixed(4), is_anomaly: alerts.length > 0 });
       addIncomingAlerts(alerts);
@@ -1176,14 +1532,14 @@
     function buildClientSyntheticAnomalyTx() {
       const randAddr = () => 'bc1q' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2, 12);
       const sender = randAddr();
-      const out = Array.from({ length: 14 }, () => ({
+      const out = Array.from({ length: 12 }, () => ({
         addr: randAddr(),
-        value: Math.floor((0.35 + Math.random() * 0.9) * 1e8)
+        value: Math.floor((0.4 + Math.random() * 0.8) * 1e8)
       }));
-      return { hash: Math.random().toString(16).slice(2), inputs: [{ prev_out: { addr: sender, value: 10.5e8 } }], out };
+      return { hash: Math.random().toString(16).slice(2), inputs: [{ prev_out: { addr: sender, value: 9.5e8 } }], out };
     }
 
-    // 4. Direct Blockchain.com WebSocket (Relays to Python Backend OR Runs Client Mode)
+    // 5. Direct Blockchain.com WebSocket (Anomalies Bypass Throttle!)
     function startBrowserBlockchainRelay() {
       if (blockchainRelayWs && (blockchainRelayWs.readyState === WebSocket.OPEN || blockchainRelayWs.readyState === WebSocket.CONNECTING)) {
         return;
@@ -1204,17 +1560,22 @@
         };
 
         blockchainRelayWs.onmessage = (evt) => {
-          const now = Date.now();
-          if (now - lastRelaySentAt < 280) return;
           try {
             const payload = JSON.parse(evt.data);
-            if (payload.op === 'utx' && payload.x) {
-              lastRelaySentAt = now;
-              if (backendConnected && sendCommand({ action: 'ingest_tx', tx: payload.x })) {
-                return;
-              }
-              processTxClientSide(payload.x);
+            if (payload.op !== 'utx' || !payload.x) return;
+
+            const tx = payload.x;
+            const now = Date.now();
+            const isPriorityAnomaly = isPotentiallyAnomalousTx(tx);
+
+            // Throttle only normal transactions; NEVER drop anomalous transactions
+            if (!isPriorityAnomaly && now - lastNormalRelayAt < 280) return;
+            if (!isPriorityAnomaly) lastNormalRelayAt = now;
+
+            if (backendConnected && sendCommand({ action: 'ingest_tx', tx })) {
+              return;
             }
+            processTxClientSide(tx);
           } catch (e) {}
         };
 
@@ -1238,26 +1599,25 @@
       }
     }
 
-    // 5. Live Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
+    // 6. Live Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
     function addIncomingAlerts(alerts) {
       if (!alerts || !alerts.length) return;
+      let addedAny = false;
       alerts.forEach((a) => {
-        if (!unreadAlerts.some((x) => x.id === a.id)) unreadAlerts.unshift(a);
+        const exists = unreadAlerts.some((x) => x.id === a.id) || inboxItems.some((x) => x.id === a.id);
+        if (!exists) {
+          unreadAlerts.unshift(a);
+          addedAny = true;
+        }
       });
       if (unreadAlerts.length > 40) unreadAlerts = unreadAlerts.slice(0, 40);
-      renderAnomalySidePanel(true);
+      renderAnomalySidePanel(addedAny);
     }
 
     function renderAnomalySidePanel(bump = false) {
+      syncAllCounters(bump, false);
       const list = document.getElementById('anomalySideList');
-      const badge = document.getElementById('sidePanelBadge');
-      badge.textContent = unreadAlerts.length;
-      document.getElementById('kpiAnomalies').textContent = unreadAlerts.length;
-
-      if (bump) {
-        badge.classList.add('bump');
-        setTimeout(() => badge.classList.remove('bump'), 350);
-      }
+      if (!list) return;
 
       if (unreadAlerts.length === 0) {
         list.innerHTML = `<div class="empty-state">No unread anomalies.<br />New real-time detections will stream here automatically.</div>`;
@@ -1376,6 +1736,7 @@
 
     function updateFocusBufferUI() {
       const el = document.getElementById('focusBufferText');
+      if (!el) return;
       el.textContent = pausedUpdatesCount === 0
         ? 'Live graph updates paused while inspecting'
         : `Live graph paused · ${pausedUpdatesCount} update(s) held in background`;
@@ -1405,17 +1766,11 @@
       }
     }
 
-    // 6. Anomaly Inbox Rendering
+    // 7. Anomaly Inbox Rendering
     function renderInbox(bump = false) {
+      syncAllCounters(false, bump);
       const list = document.getElementById('inboxList');
-      const badge = document.getElementById('inboxBadge');
-      badge.textContent = inboxItems.length;
-      document.getElementById('kpiInboxSummary').textContent = `${inboxItems.length} archived in Anomaly Inbox`;
-
-      if (bump) {
-        badge.classList.add('bump');
-        setTimeout(() => badge.classList.remove('bump'), 350);
-      }
+      if (!list) return;
 
       if (inboxItems.length === 0) {
         list.innerHTML = `<div class="empty-state">No archived anomalies yet. Click an alert to focus or mark it as read.</div>`;
@@ -1450,7 +1805,7 @@
       document.getElementById('drawerOverlay').classList.toggle('open', open);
     }
 
-    // 7. Stats, Feed, Controls & WebSocket Boot
+    // 8. Stats, Feed, Controls & WebSocket Boot
     function updateStats(s) {
       if (!s) return;
       document.getElementById('kpiNodes').textContent = s.active_nodes;
@@ -1509,8 +1864,13 @@
     }
 
     function updateConfigUI() {
-      document.getElementById('winVal').textContent = `${document.getElementById('winSlider').value} sec`;
-      document.getElementById('whaleVal').textContent = `${parseFloat(document.getElementById('whaleSlider').value).toFixed(1)} BTC`;
+      const win = parseInt(document.getElementById('winSlider').value, 10);
+      const whale = parseFloat(document.getElementById('whaleSlider').value);
+      document.getElementById('winVal').textContent = `${win} sec`;
+      document.getElementById('whaleVal').textContent = `${whale.toFixed(1)} BTC`;
+      // Update client thresholds live while dragging
+      clientGraph.windowSeconds = win;
+      clientGraph.whaleBtcThreshold = whale;
     }
 
     function pushConfig() {
@@ -1523,7 +1883,6 @@
 
     function activateDirectMainnetFallback() {
       if (backendConnected || clientMode) return;
-      console.warn('[ARCNET] Backend /ws/stream unavailable; switching to direct Blockchain.com Mainnet stream.');
       clientMode = true;
       startBrowserBlockchainRelay();
     }
@@ -1533,7 +1892,6 @@
       feedIsLive = false;
       backendConnected = false;
 
-      // If Vercel /ws/stream doesn't connect within 3.5s, switch seamlessly to direct Mainnet stream
       clearTimeout(backendConnectTimer);
       backendConnectTimer = setTimeout(activateDirectMainnetFallback, 3500);
 
