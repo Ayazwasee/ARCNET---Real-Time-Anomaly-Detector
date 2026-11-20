@@ -3,11 +3,12 @@ import json
 import random
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Set
 
 import websockets
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from backend.blockchain_graph import (
     BLOCKCHAIN_WS_URL,
@@ -19,6 +20,27 @@ FRONTEND_INDEX = Path(__file__).resolve().parent.parent / "frontend" / "index.ht
 
 app = FastAPI(title="ARCNET — Real-Time Dynamic Graph Anomaly Detector")
 
+# Persists latest slider settings across reconnects
+default_config = {
+    "window_seconds": 180,
+    "whale_btc_threshold": 2.0,
+}
+active_engines: Set[DynamicBlockchainGraph] = set()
+
+
+class ConfigUpdate(BaseModel):
+    window_seconds: int = 180
+    whale_btc_threshold: float = 2.0
+
+
+def apply_config_to_engine(
+    engine: DynamicBlockchainGraph,
+    window_seconds: int,
+    whale_btc_threshold: float,
+):
+    engine.window_seconds = max(30, min(int(window_seconds), 600))
+    engine.whale_btc_threshold = max(0.5, float(whale_btc_threshold))
+
 
 @app.get("/")
 async def serve_dashboard():
@@ -27,20 +49,35 @@ async def serve_dashboard():
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "ARCNET"}
+    return {"status": "ok", "service": "ARCNET", "config": default_config}
+
+
+@app.post("/api/config")
+async def update_config_http(cfg: ConfigUpdate):
+    """REST fallback so slider updates always apply to all active engines."""
+    default_config["window_seconds"] = max(30, min(int(cfg.window_seconds), 600))
+    default_config["whale_btc_threshold"] = max(0.5, float(cfg.whale_btc_threshold))
+    for eng in list(active_engines):
+        apply_config_to_engine(
+            eng,
+            default_config["window_seconds"],
+            default_config["whale_btc_threshold"],
+        )
+    return {"status": "updated", "config": default_config}
 
 
 @app.websocket("/ws/stream")
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
 
-    # Session-pinned dynamic graph engine (prevents Vercel multi-instance state splits)
     engine = DynamicBlockchainGraph(
-        window_seconds=180,
+        window_seconds=default_config["window_seconds"],
         max_nodes=110,
-        whale_btc_threshold=5.0,
-        fanout_threshold=10,
+        whale_btc_threshold=default_config["whale_btc_threshold"],
+        fanout_threshold=6,
     )
+    active_engines.add(engine)
+
     unread_alerts: List[dict] = []
     inbox_alerts: List[dict] = []
 
@@ -63,11 +100,6 @@ async def websocket_endpoint(ws: WebSocket):
         await send_safe(update)
 
     async def server_upstream_loop():
-        """
-        Primary path: connect directly from backend to Blockchain.com.
-        If cloud/Vercel IP is blocked or times out, signal the browser to relay
-        real live mainnet transactions into this pinned Python graph engine.
-        """
         try:
             await send_safe({"type": "status", "status": "connecting"})
             async with websockets.connect(
@@ -98,24 +130,19 @@ async def websocket_endpoint(ws: WebSocket):
             if stop_event.is_set() or browser_relay_active.is_set():
                 return
 
-            # Tell frontend to open direct wss://ws.blockchain.info/inv relay
             await send_safe({"type": "status", "status": "upstream_blocked"})
-
-            # Give browser relay 8 seconds to start feeding real mainnet transactions
             try:
                 await asyncio.wait_for(browser_relay_active.wait(), timeout=8.0)
-                return  # Browser relay took over with real mainnet data
+                return
             except asyncio.TimeoutError:
                 pass
 
-            # Only if BOTH server and browser are blocked (e.g., offline/firewall), run fallback
             await send_safe({"type": "status", "status": "fallback"})
             while not stop_event.is_set() and not browser_relay_active.is_set():
                 tx = build_synthetic_tx(force_anomaly=(random.random() < 0.08))
                 await process_and_emit_tx(tx)
                 await asyncio.sleep(0.85)
 
-    # Send initial state immediately
     await send_safe(
         {
             "type": "init",
@@ -139,12 +166,13 @@ async def websocket_endpoint(ws: WebSocket):
             action = cmd.get("action")
 
             if action == "ingest_tx":
-                # Live mainnet tx relayed from user's browser directly into Python NetworkX engine
                 if not browser_relay_active.is_set():
                     browser_relay_active.set()
                     if not upstream_task.done():
                         upstream_task.cancel()
-                    await send_safe({"type": "status", "status": "live", "source": "browser_relay"})
+                    await send_safe(
+                        {"type": "status", "status": "live", "source": "browser_relay"}
+                    )
 
                 tx = cmd.get("tx")
                 if isinstance(tx, dict):
@@ -175,10 +203,11 @@ async def websocket_endpoint(ws: WebSocket):
                 )
 
             elif action == "update_config":
-                win = int(cmd.get("window_seconds", engine.window_seconds))
-                whale = float(cmd.get("whale_btc_threshold", engine.whale_btc_threshold))
-                engine.window_seconds = max(30, min(win, 600))
-                engine.whale_btc_threshold = max(0.5, whale)
+                win = cmd.get("window_seconds", engine.window_seconds)
+                whale = cmd.get("whale_btc_threshold", engine.whale_btc_threshold)
+                apply_config_to_engine(engine, win, whale)
+                default_config["window_seconds"] = engine.window_seconds
+                default_config["whale_btc_threshold"] = engine.whale_btc_threshold
                 await send_safe(
                     {"type": "config_updated", "stats": engine.get_stats(time.time())}
                 )
@@ -189,5 +218,6 @@ async def websocket_endpoint(ws: WebSocket):
     except WebSocketDisconnect:
         pass
     finally:
+        active_engines.discard(engine)
         stop_event.set()
         upstream_task.cancel()
