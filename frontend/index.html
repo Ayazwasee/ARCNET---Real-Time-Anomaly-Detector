@@ -26,7 +26,7 @@
       --rose: #f43f5e;
       --rose-soft: #fff1f2;
       --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-      --shadow-md: 0 10px 26px -6px rgba(15, 23, 42, 0.08);
+      --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.08);
       --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.16);
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -51,7 +51,7 @@
       top: 0;
       z-index: 40;
       backdrop-filter: blur(14px);
-      background: rgba(255, 255, 255, 0.88);
+      background: rgba(255, 255, 255, 0.85);
       border-bottom: 1px solid var(--border);
       padding: 14px 28px;
       display: flex;
@@ -60,7 +60,11 @@
       gap: 16px;
     }
 
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
     .brand-mark {
       width: 36px;
@@ -71,15 +75,19 @@
       place-items: center;
       color: #fff;
       font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.02em;
+      font-size: 15px;
       box-shadow: 0 6px 14px rgba(37, 99, 235, 0.28);
     }
 
     .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
     .brand p { font-size: 12px; color: var(--muted); }
 
-    .top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
     .status-pill {
       display: inline-flex;
@@ -145,29 +153,18 @@
       background: var(--primary);
       color: #fff;
       border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
     }
     .btn-primary:hover {
       background: #1d4ed8;
       border-color: #1d4ed8;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.32);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
     }
 
     .btn-soft {
       background: var(--primary-soft);
       color: var(--primary);
       border-color: #bfdbfe;
-    }
-
-    .btn-live {
-      background: linear-gradient(135deg, var(--primary), var(--sky));
-      color: #fff;
-      border: none;
-      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
-    }
-    .btn-live:hover {
-      filter: brightness(1.06);
-      box-shadow: 0 8px 22px rgba(37, 99, 235, 0.38);
     }
 
     .badge {
@@ -183,12 +180,11 @@
       place-items: center;
       transition: transform 0.35s var(--ease);
     }
-    .badge.soft-blue { background: var(--primary); }
     .badge.bump { transform: scale(1.32); }
 
     /* Main Container */
     .container {
-      max-width: 1420px;
+      max-width: 1360px;
       margin: 0 auto;
       padding: 24px 28px 48px;
       display: flex;
@@ -219,7 +215,7 @@
     .kpi-value.accent { color: var(--primary); }
     .kpi-value.danger { color: var(--rose); }
 
-    /* Cards */
+    /* Graph Toggle Card */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -238,19 +234,8 @@
       flex-wrap: wrap;
     }
 
-    .card-title-group h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .card-title-group h2 { font-size: 15px; font-weight: 700; }
     .card-title-group p { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-    /* Workspace Grid: Graph (Left) + Live Anomalies Side Panel (Right) */
-    .workspace-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 365px;
-      gap: 20px;
-      align-items: start;
-    }
-    @media (max-width: 1080px) {
-      .workspace-grid { grid-template-columns: 1fr; }
-    }
 
     /* Toggle Switch */
     .toggle-wrap {
@@ -316,155 +301,13 @@
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; }
 
-    .canvas-stage { position: relative; }
-
     #cy {
       width: 100%;
-      height: 520px;
-      background: radial-gradient(#cbd5e1 1px, transparent 1px);
+      height: 500px;
+      background:
+        radial-gradient(#cbd5e1 1px, transparent 1px);
       background-size: 24px 24px;
       background-color: #fcfdff;
-      transition: box-shadow 0.35s var(--ease);
-    }
-    #cy.frozen {
-      box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.45);
-      background-color: #fffdf7;
-    }
-
-    /* Focus Mode / Paused Floating Banner */
-    .focus-banner {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translate(-50%, -22px);
-      z-index: 20;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 10px 14px 10px 18px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      border: 1px solid #fde68a;
-      box-shadow: var(--shadow-md);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.35s var(--ease);
-      max-width: 92%;
-    }
-    .focus-banner.visible {
-      transform: translate(-50%, 0);
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .focus-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #b45309;
-      background: var(--amber-soft);
-      padding: 4px 10px;
-      border-radius: 999px;
-      white-space: nowrap;
-    }
-    .focus-meta {
-      font-size: 12.5px;
-      color: var(--text);
-      font-weight: 500;
-    }
-    .focus-meta span {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* Live Anomalies Side Panel */
-    .anomaly-panel {
-      display: flex;
-      flex-direction: column;
-      height: 642px;
-    }
-    @media (max-width: 1080px) { .anomaly-panel { height: auto; max-height: 460px; } }
-
-    .anomaly-panel-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      background: #fafcff;
-    }
-
-    .anomaly-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--rose);
-      border-radius: 13px;
-      padding: 13px 14px;
-      cursor: pointer;
-      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
-      animation: cardPopIn 0.4s var(--ease);
-    }
-    .anomaly-card.medium { border-left-color: var(--amber); }
-    .anomaly-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: #fecdd3;
-    }
-    @keyframes cardPopIn {
-      from { opacity: 0; transform: translateX(16px) scale(0.98); }
-      to { opacity: 1; transform: translateX(0) scale(1); }
-    }
-
-    .anomaly-card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .anomaly-card-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .score-tag {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: var(--rose-soft);
-      color: var(--rose);
-      white-space: nowrap;
-    }
-    .anomaly-card.medium .score-tag {
-      background: var(--amber-soft);
-      color: #b45309;
-    }
-    .anomaly-card-summary {
-      font-size: 12px;
-      line-height: 1.48;
-      color: #475569;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      margin-bottom: 9px;
-    }
-    .anomaly-card-foot {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--muted);
-    }
-    .inspect-link {
-      color: var(--primary);
-      font-weight: 600;
     }
 
     /* Node Inspector Floating Card */
@@ -472,7 +315,7 @@
       position: absolute;
       right: 18px;
       bottom: 18px;
-      width: 295px;
+      width: 290px;
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
       border: 1px solid var(--border);
@@ -483,7 +326,6 @@
       opacity: 0;
       pointer-events: none;
       transition: all 0.3s var(--ease);
-      z-index: 15;
     }
     .node-inspector.visible {
       transform: translateY(0);
@@ -523,7 +365,7 @@
     @media (max-width: 960px) { .split-grid { grid-template-columns: 1fr; } }
 
     .feed-list {
-      max-height: 270px;
+      max-height: 290px;
       overflow-y: auto;
       padding: 8px 16px 14px;
     }
@@ -559,43 +401,42 @@
       cursor: pointer;
     }
 
-    /* On-Click Anomaly Detail Pop-Up Modal */
+    /* Real-Time Anomaly Pop-Up Modal */
     .popup-backdrop {
       position: fixed;
       inset: 0;
       z-index: 90;
-      background: rgba(15, 23, 42, 0.24);
+      background: rgba(15, 23, 42, 0.22);
       backdrop-filter: blur(4px);
       display: grid;
       place-items: center;
       padding: 20px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.28s var(--ease);
+      transition: opacity 0.3s var(--ease);
     }
     .popup-backdrop.show { opacity: 1; pointer-events: auto; }
 
     .popup-card {
       width: 100%;
-      max-width: 520px;
+      max-width: 500px;
       background: var(--surface);
       border: 1px solid #fecdd3;
       border-radius: 20px;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
-      transform: translateY(20px) scale(0.96);
-      transition: transform 0.36s var(--ease);
+      transform: translateY(24px) scale(0.96);
+      transition: transform 0.4s var(--ease);
     }
     .popup-backdrop.show .popup-card { transform: translateY(0) scale(1); }
 
     .popup-header {
       background: linear-gradient(135deg, #fff1f2, #ffffff);
-      padding: 16px 22px;
+      padding: 18px 22px;
       border-bottom: 1px solid #ffe4e6;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
     }
     .severity-pill {
       padding: 4px 10px;
@@ -607,8 +448,6 @@
       background: var(--rose);
       color: #fff;
     }
-    .severity-pill.medium { background: var(--amber); }
-
     .popup-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
     .popup-title { font-size: 18px; font-weight: 700; color: var(--text); }
     .popup-summary { font-size: 14px; line-height: 1.55; color: #334155; }
@@ -634,7 +473,6 @@
     }
     .metric-chip span { display: block; font-size: 11px; color: var(--muted); }
     .metric-chip strong { font-size: 14px; color: var(--text); }
-
     .popup-footer {
       padding: 14px 22px;
       background: #f8fafc;
@@ -643,8 +481,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      flex-wrap: wrap;
     }
+    .queue-hint { font-size: 12px; color: var(--muted); font-weight: 500; }
 
     /* Anomaly Inbox Slide-Over Drawer */
     .drawer-overlay {
@@ -663,7 +501,7 @@
       top: 0;
       right: 0;
       height: 100vh;
-      width: 430px;
+      width: 420px;
       max-width: 92vw;
       z-index: 85;
       background: var(--surface);
@@ -696,13 +534,11 @@
     .inbox-type { font-size: 13px; font-weight: 700; color: var(--rose); }
     .inbox-time { font-size: 11px; color: var(--muted); }
     .inbox-desc { font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 10px; }
-
     .empty-state {
       text-align: center;
-      padding: 46px 20px;
+      padding: 48px 20px;
       color: var(--muted);
       font-size: 13px;
-      line-height: 1.5;
     }
   </style>
 </head>
@@ -710,7 +546,7 @@
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark">AN</div>
+      <div class="brand-mark">CP</div>
       <div>
         <h1>ARCNET</h1>
         <p>Real-Time Dynamic Blockchain Graph & Anomaly Detector</p>
@@ -725,7 +561,7 @@
       <button class="btn btn-soft" onclick="simulateAnomaly()">+ Test Anomaly</button>
       <button class="btn" onclick="toggleInbox(true)">
         Anomaly Inbox
-        <span id="inboxBadge" class="badge soft-blue">0</span>
+        <span id="inboxBadge" class="badge">0</span>
       </button>
     </div>
   </header>
@@ -749,97 +585,58 @@
         <div id="kpiComponents" class="kpi-sub">0 connected clusters</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Active Unread Alerts</div>
+        <div class="kpi-label">Flagged Anomalies</div>
         <div id="kpiAnomalies" class="kpi-value danger">0</div>
-        <div id="kpiInboxSummary" class="kpi-sub">0 archived in Anomaly Inbox</div>
+        <div class="kpi-sub">Acknowledged alerts stored in Inbox</div>
       </div>
     </section>
 
-    <!-- Main Workspace: Active Graph (Left) + Live Anomalies Side Panel (Right) -->
-    <section class="workspace-grid">
-      <!-- Active Real-Time Graph Card -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2>Active Real-Time Network Graph</h2>
-            <p>Zoom, pan, drag, or click any wallet node to inspect metrics.</p>
-          </div>
-          <div class="toggle-wrap" onclick="toggleGraphView()">
-            <span id="graphToggleLabel">Hide Active Graph</span>
-            <div id="graphSwitch" class="switch active"></div>
-          </div>
+    <!-- Toggleable Active Real-Time Graph Card -->
+    <section class="card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2>Active Real-Time Network Graph</h2>
+          <p>Toggle live interactive topology — zoom, pan, drag, or click any wallet node to inspect metrics.</p>
         </div>
+        <div class="toggle-wrap" onclick="toggleGraphView()">
+          <span id="graphToggleLabel">Show Active Graph</span>
+          <div id="graphSwitch" class="switch active"></div>
+        </div>
+      </div>
 
-        <div id="graphShell" class="graph-shell open">
-          <div class="graph-inner">
-            <div class="graph-toolbar">
-              <div class="legend">
-                <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
-                <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Active Hub</div>
-                <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Node</div>
-              </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button id="resumeToolbarBtn" class="btn btn-live" style="display:none;" onclick="resumeLiveGraph()">
-                  ↺ Back to Live Graph
-                </button>
-                <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
-                <button class="btn" onclick="runSmoothLayout(true)">Re-Layout</button>
-                <button class="btn" onclick="fitGraph()">Fit View</button>
-              </div>
+      <div id="graphShell" class="graph-shell open">
+        <div class="graph-inner">
+          <div class="graph-toolbar">
+            <div class="legend">
+              <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
+              <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Active Hub</div>
+              <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Node</div>
             </div>
+            <div style="display:flex; gap:8px;">
+              <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
+              <button class="btn" onclick="runSmoothLayout()">Re-Layout</button>
+              <button class="btn" onclick="fitGraph()">Fit View</button>
+            </div>
+          </div>
 
-            <div class="canvas-stage">
-              <!-- Floating Inspection / Paused Banner -->
-              <div id="focusBanner" class="focus-banner">
-                <span class="focus-pill">⏸ Graph Paused</span>
-                <div class="focus-meta">
-                  <strong id="focusTargetLabel">Inspecting anomaly node</strong>
-                  <span id="focusBufferText">Live updates held while inspecting</span>
-                </div>
-                <button class="btn btn-live" style="padding:7px 13px; font-size:12.5px;" onclick="resumeLiveGraph()">
-                  Back to Live Graph
-                </button>
-              </div>
+          <div id="cy"></div>
 
-              <div id="cy"></div>
-
-              <!-- Interactive Node Inspector -->
-              <div id="nodeInspector" class="node-inspector">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <strong style="font-size:13px;">Wallet Node Details</strong>
-                  <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
-                </div>
-                <div id="inspAddr" class="inspector-addr"></div>
-                <div class="inspector-grid">
-                  <div class="inspector-stat"><span>In / Out Degree</span><strong id="inspDeg">0 / 0</strong></div>
-                  <div class="inspector-stat"><span>Tx Count</span><strong id="inspTx">0</strong></div>
-                  <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
-                  <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
-                </div>
-              </div>
+          <!-- Interactive Node Inspector -->
+          <div id="nodeInspector" class="node-inspector">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:13px;">Wallet Node Details</strong>
+              <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
+            </div>
+            <div id="inspAddr" class="inspector-addr"></div>
+            <div class="inspector-grid">
+              <div class="inspector-stat"><span>In / Out Degree</span><strong id="inspDeg">0 / 0</strong></div>
+              <div class="inspector-stat"><span>Tx Count</span><strong id="inspTx">0</strong></div>
+              <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
+              <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Live Anomalies Side Panel -->
-      <aside class="card anomaly-panel">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2>
-              Live Anomalies
-              <span id="sidePanelBadge" class="badge">0</span>
-            </h2>
-            <p>Click any alert to inspect details & focus node</p>
-          </div>
-        </div>
-        <div id="anomalySideList" class="anomaly-panel-list">
-          <div class="empty-state">
-            Monitoring live Bitcoin network...<br />
-            Detected anomalies will appear here in real time.
-          </div>
-        </div>
-      </aside>
     </section>
 
     <!-- Live Stream Feed + Engine Controls -->
@@ -873,32 +670,32 @@
             <input id="whaleSlider" type="range" min="1" max="25" step="0.5" value="5" oninput="updateConfigUI()" onchange="pushConfig()" />
           </div>
           <p style="font-size:12px; color:var(--muted); line-height:1.5;">
-            Older edges expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
+            Older edges automatically expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
           </p>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- On-Click Anomaly Details Pop-Up -->
-  <div id="popupBackdrop" class="popup-backdrop" onclick="handleBackdropClick(event)">
+  <!-- Real-Time Anomaly Pop-Up -->
+  <div id="popupBackdrop" class="popup-backdrop">
     <div class="popup-card">
       <div class="popup-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span class="severity-pill" id="popupSeverity">HIGH SEVERITY</span>
-          <span id="popupScore" class="mono" style="font-weight:700; color:var(--rose);">Score: 92/100</span>
-        </div>
-        <button class="btn" style="padding:4px 10px; font-size:12px;" onclick="closeDetailsModal()">✕</button>
+        <span class="severity-pill" id="popupSeverity">HIGH SEVERITY</span>
+        <span id="popupScore" class="mono" style="font-weight:700; color:var(--rose);">Score: 92/100</span>
       </div>
       <div class="popup-body">
-        <div id="popupTitle" class="popup-title">Anomaly Details</div>
+        <div id="popupTitle" class="popup-title">Anomaly Detected</div>
         <div id="popupSummary" class="popup-summary"></div>
         <div id="popupExplain" class="popup-explain"></div>
         <div id="popupMetrics" class="metric-chips"></div>
       </div>
       <div class="popup-footer">
-        <button class="btn" onclick="markSelectedAsReadOnly()">Mark as Read → Inbox</button>
-        <button class="btn btn-primary" onclick="focusSelectedAnomalyNode()">Focus Node & Pause Graph</button>
+        <span id="queueHint" class="queue-hint"></span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" onclick="inspectCurrentPopupNode()">Focus Node</button>
+          <button class="btn btn-primary" onclick="acknowledgePopup()">Mark as Read → Inbox</button>
+        </div>
       </div>
     </div>
   </div>
@@ -909,17 +706,24 @@
     <div class="card-header">
       <div class="card-title-group">
         <h2>Anomaly Inbox</h2>
-        <p>Inspected & archived real-time alerts</p>
+        <p>Read & archived real-time alerts</p>
       </div>
       <button class="btn" onclick="toggleInbox(false)">Close</button>
     </div>
     <div id="inboxList" class="inbox-list">
-      <div class="empty-state">No archived anomalies yet. Click an alert to focus or mark it as read.</div>
+      <div class="empty-state">No read anomalies yet. Acknowledged pop-ups will appear here.</div>
     </div>
   </aside>
 
   <script>
     let cy = null;
+    let socket = null;
+    let blockchainRelayWs = null;
+    let relayPingTimer = null;
+    let relayFallbackTimer = null;
+    let lastRelaySentAt = 0;
+    let feedIsLive = false;
+
     let graphOpen = true;
     let layoutPaused = false;
     let graphFrozen = false;
@@ -936,6 +740,14 @@
         .replace(/</g, '<')
         .replace(/>/g, '>')
         .replace(/"/g, '"');
+    }
+
+    function sendCommand(payload) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(payload));
+        return true;
+      }
+      return false;
     }
 
     // 1. Initialize Cytoscape Interactive Graph
@@ -1031,7 +843,6 @@
         if (evt.target === cy) closeInspector();
       });
 
-      // Subtle breathing pulse for anomalous nodes
       setInterval(() => {
         if (!cy || !graphOpen) return;
         const flagged = cy.nodes('[?is_anomaly]');
@@ -1091,7 +902,7 @@
       }
     }
 
-    // 2. Apply Live Graph Diffs (Skipped while Frozen in Focus Mode)
+    // 2. Apply Live Graph Diffs
     function upsertGraphElements(nodes, edges, removedNodes = [], removedEdges = []) {
       if (!cy) return;
       if (graphFrozen) {
@@ -1179,7 +990,57 @@
       setTimeout(() => fitGraph(), 480);
     }
 
-    // 3. Live Anomalies Side Panel -> Click -> Details Modal -> Focus & Pause -> Inbox
+    // 3. Direct Browser -> Python Blockchain.com Relay (Vercel IP-block fail-safe)
+    function startBrowserBlockchainRelay() {
+      if (blockchainRelayWs && (blockchainRelayWs.readyState === WebSocket.OPEN || blockchainRelayWs.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      try {
+        blockchainRelayWs = new WebSocket('wss://ws.blockchain.info/inv');
+
+        blockchainRelayWs.onopen = () => {
+          blockchainRelayWs.send(JSON.stringify({ op: 'unconfirmed_sub' }));
+          clearInterval(relayPingTimer);
+          relayPingTimer = setInterval(() => {
+            if (blockchainRelayWs && blockchainRelayWs.readyState === WebSocket.OPEN) {
+              blockchainRelayWs.send(JSON.stringify({ op: 'ping' }));
+            }
+          }, 25000);
+        };
+
+        blockchainRelayWs.onmessage = (evt) => {
+          const now = Date.now();
+          if (now - lastRelaySentAt < 280) return; // Smooth pacing
+          try {
+            const payload = JSON.parse(evt.data);
+            if (payload.op === 'utx' && payload.x) {
+              lastRelaySentAt = now;
+              sendCommand({ action: 'ingest_tx', tx: payload.x });
+            }
+          } catch (e) {}
+        };
+
+        blockchainRelayWs.onclose = () => {
+          clearInterval(relayPingTimer);
+          blockchainRelayWs = null;
+        };
+
+        blockchainRelayWs.onerror = () => {
+          if (blockchainRelayWs) blockchainRelayWs.close();
+        };
+      } catch (e) {}
+    }
+
+    function stopBrowserBlockchainRelay() {
+      clearInterval(relayPingTimer);
+      if (blockchainRelayWs) {
+        blockchainRelayWs.close();
+        blockchainRelayWs = null;
+      }
+    }
+
+    // 4. Live Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
     function addIncomingAlerts(alerts) {
       if (!alerts || !alerts.length) return;
       alerts.forEach((a) => {
@@ -1262,7 +1123,7 @@
       selectedAlert = null;
     }
 
-    async function moveAlertToInbox(alert) {
+    function moveAlertToInbox(alert) {
       if (!alert) return;
       unreadAlerts = unreadAlerts.filter((a) => a.id !== alert.id);
       if (!inboxItems.some((a) => a.id === alert.id)) {
@@ -1270,28 +1131,21 @@
       }
       renderAnomalySidePanel(false);
       renderInbox(true);
-
-      try {
-        await fetch(`/api/alerts/${encodeURIComponent(alert.id)}/read`, { method: 'POST' });
-      } catch (e) {}
+      sendCommand({ action: 'mark_read', alert_id: alert.id });
     }
 
-    async function markSelectedAsReadOnly() {
+    function markSelectedAsReadOnly() {
       if (!selectedAlert) return;
       const alert = selectedAlert;
       closeDetailsModal();
-      await moveAlertToInbox(alert);
+      moveAlertToInbox(alert);
     }
 
-    async function focusSelectedAnomalyNode() {
+    function focusSelectedAnomalyNode() {
       if (!selectedAlert) return;
       const alert = selectedAlert;
       closeDetailsModal();
-
-      // 1. Archive the anomaly into the Inbox immediately
-      await moveAlertToInbox(alert);
-
-      // 2. Freeze live graph updates and focus on the anomalous node
+      moveAlertToInbox(alert);
       enterFocusMode(alert);
     }
 
@@ -1314,7 +1168,6 @@
         cy.elements().removeClass('dimmed focused-target');
 
         let node = cy.getElementById(alert.primary_node);
-        // If node already aged out of the sliding window before clicking, render a temporary snapshot node
         if (!node.length) {
           const cx = cy.width() / 2 || 400;
           const cyMid = cy.height() / 2 || 260;
@@ -1338,7 +1191,6 @@
             'Node aged out of active window — showing archived reference node';
         }
 
-        // Highlight node + its 1-hop ego neighbourhood, softly dim unrelated nodes
         const neighborhood = node.closedNeighborhood();
         cy.elements().difference(neighborhood).addClass('dimmed');
         node.addClass('focused-target');
@@ -1362,7 +1214,7 @@
       }
     }
 
-    async function resumeLiveGraph() {
+    function resumeLiveGraph() {
       graphFrozen = false;
       pausedUpdatesCount = 0;
 
@@ -1372,21 +1224,12 @@
       closeInspector();
 
       if (cy) cy.elements().removeClass('dimmed focused-target');
-
-      // Resync cleanly with the latest live graph snapshot from FastAPI
-      try {
-        const res = await fetch('/api/snapshot');
-        if (res.ok) {
-          const snapshot = await res.json();
-          replaceGraphFromSnapshot(snapshot);
-          updateStats(snapshot.stats);
-        }
-      } catch (e) {
+      if (!sendCommand({ action: 'get_snapshot' })) {
         fitGraph();
       }
     }
 
-    // 4. Anomaly Inbox Rendering
+    // 5. Anomaly Inbox Rendering
     function renderInbox(bump = false) {
       const list = document.getElementById('inboxList');
       const badge = document.getElementById('inboxBadge');
@@ -1434,7 +1277,7 @@
       document.getElementById('drawerOverlay').classList.toggle('open', open);
     }
 
-    // 5. Stats, Feed, Controls & WebSocket
+    // 6. Stats, Feed, Controls & WebSocket
     function updateStats(s) {
       if (!s) return;
       document.getElementById('kpiNodes').textContent = s.active_nodes;
@@ -1463,22 +1306,32 @@
       while (feed.children.length > 18) feed.removeChild(feed.lastChild);
     }
 
-    function setFeedStatus(status) {
+    function setFeedStatus(status, source = '') {
       const pill = document.getElementById('statusPill');
       const txt = document.getElementById('statusText');
+
       if (status === 'live') {
+        feedIsLive = true;
+        clearTimeout(relayFallbackTimer);
         pill.classList.remove('fallback');
-        txt.textContent = 'Live · Blockchain.com Mainnet';
+        txt.textContent = source === 'browser_relay'
+          ? 'Live · Blockchain.com (Direct Relay)'
+          : 'Live · Blockchain.com Mainnet';
+      } else if (status === 'upstream_blocked') {
+        pill.classList.add('fallback');
+        txt.textContent = 'Connecting via Direct Blockchain Relay...';
+        startBrowserBlockchainRelay();
       } else if (status === 'fallback') {
         pill.classList.add('fallback');
         txt.textContent = 'Fallback Stream (Reconnecting...)';
       } else {
+        pill.classList.remove('fallback');
         txt.textContent = 'Connecting to Blockchain.com...';
       }
     }
 
-    async function simulateAnomaly() {
-      await fetch('/api/simulate-anomaly', { method: 'POST' });
+    function simulateAnomaly() {
+      sendCommand({ action: 'simulate_anomaly' });
     }
 
     function updateConfigUI() {
@@ -1486,48 +1339,72 @@
       document.getElementById('whaleVal').textContent = `${parseFloat(document.getElementById('whaleSlider').value).toFixed(1)} BTC`;
     }
 
-    async function pushConfig() {
-      await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          window_seconds: parseInt(document.getElementById('winSlider').value, 10),
-          whale_btc_threshold: parseFloat(document.getElementById('whaleSlider').value)
-        })
+    function pushConfig() {
+      sendCommand({
+        action: 'update_config',
+        window_seconds: parseInt(document.getElementById('winSlider').value, 10),
+        whale_btc_threshold: parseFloat(document.getElementById('whaleSlider').value)
       });
     }
 
     function connectWebSocket() {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-      const ws = new WebSocket(`${proto}://${location.host}/ws/stream`);
+      feedIsLive = false;
+      socket = new WebSocket(`${proto}://${location.host}/ws/stream`);
 
-      ws.onmessage = (event) => {
+      socket.onopen = () => {
+        // Re-apply current slider settings if reconnecting after Vercel 300s session cycle
+        pushConfig();
+        // If server upstream hasn't connected within 4s (e.g. cloud IP throttle), start browser relay
+        clearTimeout(relayFallbackTimer);
+        relayFallbackTimer = setTimeout(() => {
+          if (!feedIsLive) startBrowserBlockchainRelay();
+        }, 4000);
+      };
+
+      socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.type === 'init') {
           setFeedStatus(msg.status);
-          upsertGraphElements(msg.snapshot.nodes, msg.snapshot.edges);
-          updateStats(msg.snapshot.stats);
-          unreadAlerts = msg.unread || [];
-          inboxItems = msg.inbox || [];
+          if (msg.snapshot && (msg.snapshot.nodes.length > 0 || cy.elements().length === 0)) {
+            upsertGraphElements(msg.snapshot.nodes, msg.snapshot.edges);
+            updateStats(msg.snapshot.stats);
+          }
+          // Preserve existing unread/inbox alerts across automatic Vercel reconnects
+          if (msg.unread && msg.unread.length > 0) unreadAlerts = msg.unread;
+          if (msg.inbox && msg.inbox.length > 0) inboxItems = msg.inbox;
           renderAnomalySidePanel(false);
           renderInbox(false);
-          setTimeout(() => fitGraph(), 600);
         } else if (msg.type === 'graph_update') {
           upsertGraphElements(msg.added_nodes, msg.added_edges, msg.removed_nodes, msg.removed_edges);
           updateStats(msg.stats);
           appendTxFeed(msg.tx_summary);
           addIncomingAlerts(msg.alerts);
+        } else if (msg.type === 'snapshot') {
+          replaceGraphFromSnapshot(msg.snapshot);
+          updateStats(msg.snapshot.stats);
         } else if (msg.type === 'status') {
-          setFeedStatus(msg.status);
+          setFeedStatus(msg.status, msg.source || '');
         } else if (msg.type === 'alerts_synced') {
-          unreadAlerts = msg.unread || [];
-          inboxItems = msg.inbox || [];
+          if (msg.unread.length || unreadAlerts.length === 0) unreadAlerts = msg.unread;
+          if (msg.inbox.length) {
+            msg.inbox.forEach((a) => {
+              if (!inboxItems.some((x) => x.id === a.id)) inboxItems.unshift(a);
+            });
+          }
           renderAnomalySidePanel(false);
           renderInbox(false);
+        } else if (msg.type === 'config_updated') {
+          updateStats(msg.stats);
         }
       };
 
-      ws.onclose = () => setTimeout(connectWebSocket, 2500);
+      socket.onclose = () => {
+        clearTimeout(relayFallbackTimer);
+        stopBrowserBlockchainRelay();
+        setFeedStatus('connecting');
+        setTimeout(connectWebSocket, 1800);
+      };
     }
 
     initCytoscape();
