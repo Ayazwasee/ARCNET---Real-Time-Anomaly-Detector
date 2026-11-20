@@ -721,7 +721,11 @@
     let blockchainRelayWs = null;
     let relayPingTimer = null;
     let relayFallbackTimer = null;
+    let backendConnectTimer = null;
     let lastRelaySentAt = 0;
+
+    let backendConnected = false;
+    let clientMode = false; // Auto-enabled if Vercel /ws/stream fails to upgrade
     let feedIsLive = false;
 
     let graphOpen = true;
@@ -734,12 +738,29 @@
     let inboxItems = [];
     let selectedAlert = null;
 
+    // Lightweight client-side dynamic graph state (used only if backend WS is unavailable)
+    const clientGraph = {
+      nodes: new Map(),      // id -> node data
+      edges: new Map(),      // id -> {id, source, target, weight, count, timestamp, tx_hash}
+      txTimes: [],
+      cooldowns: new Map(),
+      windowSeconds: 180,
+      whaleBtcThreshold: 5.0,
+      fanoutThreshold: 10,
+      maxNodes: 110
+    };
+
     function escapeHtml(str) {
       return String(str ?? '')
         .replace(/&/g, '&')
         .replace(/</g, '<')
         .replace(/>/g, '>')
         .replace(/"/g, '"');
+    }
+
+    function shortAddr(addr) {
+      if (!addr || addr.length <= 12) return addr || 'unknown';
+      return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     }
 
     function sendCommand(payload) {
@@ -774,10 +795,7 @@
               'transition-duration': '0.35s'
             }
           },
-          {
-            selector: 'node[degree >= 4]',
-            style: { 'background-color': '#0ea5e9' }
-          },
+          { selector: 'node[degree >= 4]', style: { 'background-color': '#0ea5e9' } },
           {
             selector: 'node[?is_anomaly]',
             style: {
@@ -801,10 +819,7 @@
               'z-index': 99
             }
           },
-          {
-            selector: '.dimmed',
-            style: { 'opacity': 0.2 }
-          },
+          { selector: '.dimmed', style: { 'opacity': 0.2 } },
           {
             selector: 'edge',
             style: {
@@ -821,27 +836,15 @@
           },
           {
             selector: 'edge.fresh',
-            style: {
-              'line-color': '#3b82f6',
-              'target-arrow-color': '#2563eb',
-              'width': 3
-            }
+            style: { 'line-color': '#3b82f6', 'target-arrow-color': '#2563eb', 'width': 3 }
           },
-          {
-            selector: 'node:selected',
-            style: { 'border-width': 4, 'border-color': '#0f172a' }
-          }
+          { selector: 'node:selected', style: { 'border-width': 4, 'border-color': '#0f172a' } }
         ],
         layout: { name: 'cose', animate: true }
       });
 
-      cy.on('tap', 'node', (evt) => {
-        showNodeInspector(evt.target.data());
-      });
-
-      cy.on('tap', (evt) => {
-        if (evt.target === cy) closeInspector();
-      });
+      cy.on('tap', 'node', (evt) => showNodeInspector(evt.target.data()));
+      cy.on('tap', (evt) => { if (evt.target === cy) closeInspector(); });
 
       setInterval(() => {
         if (!cy || !graphOpen) return;
@@ -897,9 +900,7 @@
       document.getElementById('graphShell').classList.toggle('open', graphOpen);
       document.getElementById('graphSwitch').classList.toggle('active', graphOpen);
       document.getElementById('graphToggleLabel').textContent = graphOpen ? 'Hide Active Graph' : 'Show Active Graph';
-      if (graphOpen && cy) {
-        setTimeout(() => { cy.resize(); fitGraph(); }, 350);
-      }
+      if (graphOpen && cy) setTimeout(() => { cy.resize(); fitGraph(); }, 350);
     }
 
     // 2. Apply Live Graph Diffs
@@ -913,14 +914,8 @@
 
       let structureChanged = false;
       cy.batch(() => {
-        removedEdges.forEach((eid) => {
-          const el = cy.getElementById(eid);
-          if (el.length) el.remove();
-        });
-        removedNodes.forEach((nid) => {
-          const el = cy.getElementById(nid);
-          if (el.length) el.remove();
-        });
+        removedEdges.forEach((eid) => { const el = cy.getElementById(eid); if (el.length) el.remove(); });
+        removedNodes.forEach((nid) => { const el = cy.getElementById(nid); if (el.length) el.remove(); });
 
         const cx = cy.width() / 2 || 400;
         const cyMid = cy.height() / 2 || 260;
@@ -934,10 +929,7 @@
             cy.add({
               group: 'nodes',
               data: n,
-              position: {
-                x: cx + (Math.random() - 0.5) * 180,
-                y: cyMid + (Math.random() - 0.5) * 180
-              }
+              position: { x: cx + (Math.random() - 0.5) * 180, y: cyMid + (Math.random() - 0.5) * 180 }
             });
           }
         });
@@ -955,9 +947,7 @@
       });
 
       setTimeout(() => {
-        if (cy && !graphFrozen) {
-          edges.forEach((e) => cy.getElementById(e.id).removeClass('fresh'));
-        }
+        if (cy && !graphFrozen) edges.forEach((e) => cy.getElementById(e.id).removeClass('fresh'));
       }, 900);
 
       if (structureChanged) runSmoothLayout();
@@ -974,10 +964,7 @@
           cy.add({
             group: 'nodes',
             data: n,
-            position: {
-              x: cx + (Math.random() - 0.5) * 220,
-              y: cyMid + (Math.random() - 0.5) * 220
-            }
+            position: { x: cx + (Math.random() - 0.5) * 220, y: cyMid + (Math.random() - 0.5) * 220 }
           });
         });
         (snapshot.edges || []).forEach((e) => {
@@ -990,7 +977,213 @@
       setTimeout(() => fitGraph(), 480);
     }
 
-    // 3. Direct Browser -> Python Blockchain.com Relay (Vercel IP-block fail-safe)
+    // 3. Client-Side Dynamic Graph Engine (Fail-Safe if Vercel WS isn't active)
+    function clientCooldown(key) {
+      const now = Date.now() / 1000;
+      const last = clientGraph.cooldowns.get(key) || 0;
+      if (now - last < 25) return true;
+      clientGraph.cooldowns.set(key, now);
+      return false;
+    }
+
+    function clientComputeStats(nowSec) {
+      clientGraph.txTimes = clientGraph.txTimes.filter((t) => nowSec - t <= 10);
+      // Approximate connected components via BFS
+      const adj = new Map();
+      clientGraph.nodes.forEach((_, id) => adj.set(id, []));
+      clientGraph.edges.forEach((e) => {
+        if (adj.has(e.source) && adj.has(e.target)) {
+          adj.get(e.source).push(e.target);
+          adj.get(e.target).push(e.source);
+        }
+      });
+      const visited = new Set();
+      let components = 0;
+      for (const id of adj.keys()) {
+        if (visited.has(id)) continue;
+        components++;
+        const q = [id];
+        visited.add(id);
+        while (q.length) {
+          const cur = q.shift();
+          for (const nb of adj.get(cur) || []) {
+            if (!visited.has(nb)) { visited.add(nb); q.push(nb); }
+          }
+        }
+      }
+      return {
+        active_nodes: clientGraph.nodes.size,
+        active_edges: clientGraph.edges.size,
+        tx_per_sec: +(clientGraph.txTimes.length / 10).toFixed(2),
+        components
+      };
+    }
+
+    function processTxClientSide(tx) {
+      const now = Date.now() / 1000;
+      const SAT = 1e8;
+      const txHash = tx.hash || Math.random().toString(16).slice(2, 14);
+
+      const senders = [];
+      (tx.inputs || []).forEach((inp) => {
+        const addr = inp?.prev_out?.addr;
+        if (addr && !senders.includes(addr)) senders.push(addr);
+      });
+
+      const recvMap = new Map();
+      (tx.out || []).forEach((o) => {
+        if (o?.addr) recvMap.set(o.addr, (recvMap.get(o.addr) || 0) + (o.value || 0) / SAT);
+      });
+
+      if (!senders.length || !recvMap.size) return;
+
+      const rawIn = senders.length;
+      const rawOut = recvMap.size;
+      let totalBtc = 0;
+      recvMap.forEach((v) => { totalBtc += v; });
+
+      const cappedSenders = senders.slice(0, 4);
+      const cappedReceivers = [...recvMap.keys()].sort((a, b) => recvMap.get(b) - recvMap.get(a)).slice(0, 12);
+      const primarySender = cappedSenders[0];
+
+      const touchedNodes = new Set();
+      const addedEdges = [];
+
+      const upsertEdge = (u, v, btc) => {
+        [u, v].forEach((id) => {
+          if (!clientGraph.nodes.has(id)) {
+            clientGraph.nodes.set(id, {
+              id, label: shortAddr(id), degree: 0, in_degree: 0, out_degree: 0,
+              total_in_btc: 0, total_out_btc: 0, tx_count: 0, is_anomaly: false, last_seen: now
+            });
+          }
+          const n = clientGraph.nodes.get(id);
+          n.last_seen = now;
+          n.tx_count += 1;
+        });
+        clientGraph.nodes.get(u).total_out_btc = +(clientGraph.nodes.get(u).total_out_btc + btc).toFixed(5);
+        clientGraph.nodes.get(v).total_in_btc = +(clientGraph.nodes.get(v).total_in_btc + btc).toFixed(5);
+
+        const eid = `${u}__${v}`;
+        if (clientGraph.edges.has(eid)) {
+          const e = clientGraph.edges.get(eid);
+          e.weight = +(e.weight + btc).toFixed(5);
+          e.count += 1;
+          e.timestamp = now;
+        } else {
+          clientGraph.edges.set(eid, { id: eid, source: u, target: v, weight: +btc.toFixed(5), count: 1, timestamp: now, tx_hash: txHash.slice(0, 10) });
+        }
+        touchedNodes.add(u);
+        touchedNodes.add(v);
+        addedEdges.push(clientGraph.edges.get(eid));
+      };
+
+      cappedReceivers.forEach((r) => {
+        if (r !== primarySender) upsertEdge(primarySender, r, recvMap.get(r));
+      });
+      if (cappedSenders.length > 1 && cappedReceivers.length) {
+        const primaryRecv = cappedReceivers[0];
+        cappedSenders.slice(1).forEach((s) => {
+          if (s !== primaryRecv) upsertEdge(s, primaryRecv, recvMap.get(primaryRecv) / cappedSenders.length);
+        });
+      }
+
+      // Prune expired edges
+      const cutoff = now - clientGraph.windowSeconds;
+      const removedEdges = [];
+      clientGraph.edges.forEach((e, eid) => {
+        if (e.timestamp < cutoff) { clientGraph.edges.delete(eid); removedEdges.push(eid); }
+      });
+
+      // Recompute degrees & drop isolated nodes
+      clientGraph.nodes.forEach((n) => { n.in_degree = 0; n.out_degree = 0; n.degree = 0; });
+      clientGraph.edges.forEach((e) => {
+        const u = clientGraph.nodes.get(e.source);
+        const v = clientGraph.nodes.get(e.target);
+        if (u && v) { u.out_degree++; u.degree++; v.in_degree++; v.degree++; }
+      });
+
+      const removedNodes = [];
+      clientGraph.nodes.forEach((n, id) => {
+        if (n.degree === 0) { clientGraph.nodes.delete(id); removedNodes.push(id); }
+      });
+
+      if (clientGraph.nodes.size > clientGraph.maxNodes) {
+        const excess = clientGraph.nodes.size - clientGraph.maxNodes;
+        const sorted = [...clientGraph.nodes.values()].sort((a, b) => (a.is_anomaly - b.is_anomaly) || (a.last_seen - b.last_seen));
+        sorted.slice(0, excess).forEach((n) => {
+          clientGraph.nodes.delete(n.id);
+          removedNodes.push(n.id);
+          clientGraph.edges.forEach((e, eid) => {
+            if (e.source === n.id || e.target === n.id) { clientGraph.edges.delete(eid); removedEdges.push(eid); }
+          });
+        });
+      }
+
+      // Detect anomalies
+      const alerts = [];
+      const makeId = () => Math.random().toString(16).slice(2, 12);
+
+      if (rawOut >= clientGraph.fanoutThreshold && !clientCooldown(`fanout:${primarySender}`)) {
+        alerts.push({
+          id: makeId(), type: 'Fan-Out Star Burst', severity: rawOut >= 15 ? 'high' : 'medium',
+          score: Math.min(99, 68 + Math.min(rawOut, 28)), timestamp: now,
+          primary_node: primarySender, short_node: shortAddr(primarySender), tx_hash: txHash,
+          summary: `Wallet ${shortAddr(primarySender)} rapidly dispersed ${totalBtc.toFixed(4)} BTC across ${rawOut} destination wallets in a star topology.`,
+          explanation: 'A sudden spike in Out-Degree Centrality paired with low local clustering indicates automated batch payouts, mixing dispersion, or dust attacks.',
+          metrics: { 'Out-Degree (Raw)': rawOut, 'Volume (BTC)': +totalBtc.toFixed(4), 'Inputs': rawIn }
+        });
+      }
+
+      if (totalBtc >= clientGraph.whaleBtcThreshold && !clientCooldown(`whale:${primarySender}`)) {
+        alerts.push({
+          id: makeId(), type: 'Whale Volume Spike', severity: totalBtc >= clientGraph.whaleBtcThreshold * 3 ? 'high' : 'medium',
+          score: Math.min(99, Math.floor(72 + Math.log1p(totalBtc) * 8)), timestamp: now,
+          primary_node: primarySender, short_node: shortAddr(primarySender), tx_hash: txHash,
+          summary: `High-value transfer of ${totalBtc.toFixed(4)} BTC initiated by ${shortAddr(primarySender)} (threshold: ${clientGraph.whaleBtcThreshold} BTC).`,
+          explanation: 'Edge weight jumped sharply above the active sliding-window baseline, signaling institutional transfers or exchange cold-wallet sweeps.',
+          metrics: { 'Transfer (BTC)': +totalBtc.toFixed(4), 'Inputs / Outputs': `${rawIn} -> ${rawOut}` }
+        });
+      }
+
+      if (rawIn >= 8 && cappedReceivers.length && !clientCooldown(`fanin:${cappedReceivers[0]}`)) {
+        const tgt = cappedReceivers[0];
+        alerts.push({
+          id: makeId(), type: 'Fan-In Consolidation Surge', severity: 'medium',
+          score: Math.min(95, 65 + rawIn * 2), timestamp: now,
+          primary_node: tgt, short_node: shortAddr(tgt), tx_hash: txHash,
+          summary: `Wallet ${shortAddr(tgt)} consolidated funds from ${rawIn} distinct input wallets totaling ${totalBtc.toFixed(4)} BTC.`,
+          explanation: 'A sharp rise in In-Degree Centrality indicates multiple wallets sweeping balances into a single hub.',
+          metrics: { 'Input Wallets': rawIn, 'Volume (BTC)': +totalBtc.toFixed(4) }
+        });
+      }
+
+      alerts.forEach((a) => {
+        const n = clientGraph.nodes.get(a.primary_node);
+        if (n) { n.is_anomaly = true; n.anomaly_type = a.type; }
+      });
+
+      clientGraph.txTimes.push(now);
+      const addedNodes = [...touchedNodes].map((id) => clientGraph.nodes.get(id)).filter(Boolean);
+      const stats = clientComputeStats(now);
+
+      upsertGraphElements(addedNodes, addedEdges, removedNodes, removedEdges);
+      updateStats(stats);
+      appendTxFeed({ sender: shortAddr(primarySender), outputs: rawOut, btc: +totalBtc.toFixed(4), is_anomaly: alerts.length > 0 });
+      addIncomingAlerts(alerts);
+    }
+
+    function buildClientSyntheticAnomalyTx() {
+      const randAddr = () => 'bc1q' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2, 12);
+      const sender = randAddr();
+      const out = Array.from({ length: 14 }, () => ({
+        addr: randAddr(),
+        value: Math.floor((0.35 + Math.random() * 0.9) * 1e8)
+      }));
+      return { hash: Math.random().toString(16).slice(2), inputs: [{ prev_out: { addr: sender, value: 10.5e8 } }], out };
+    }
+
+    // 4. Direct Blockchain.com WebSocket (Relays to Python Backend OR Runs Client Mode)
     function startBrowserBlockchainRelay() {
       if (blockchainRelayWs && (blockchainRelayWs.readyState === WebSocket.OPEN || blockchainRelayWs.readyState === WebSocket.CONNECTING)) {
         return;
@@ -1001,6 +1194,7 @@
 
         blockchainRelayWs.onopen = () => {
           blockchainRelayWs.send(JSON.stringify({ op: 'unconfirmed_sub' }));
+          if (clientMode) setFeedStatus('live', 'direct');
           clearInterval(relayPingTimer);
           relayPingTimer = setInterval(() => {
             if (blockchainRelayWs && blockchainRelayWs.readyState === WebSocket.OPEN) {
@@ -1011,12 +1205,15 @@
 
         blockchainRelayWs.onmessage = (evt) => {
           const now = Date.now();
-          if (now - lastRelaySentAt < 280) return; // Smooth pacing
+          if (now - lastRelaySentAt < 280) return;
           try {
             const payload = JSON.parse(evt.data);
             if (payload.op === 'utx' && payload.x) {
               lastRelaySentAt = now;
-              sendCommand({ action: 'ingest_tx', tx: payload.x });
+              if (backendConnected && sendCommand({ action: 'ingest_tx', tx: payload.x })) {
+                return;
+              }
+              processTxClientSide(payload.x);
             }
           } catch (e) {}
         };
@@ -1024,6 +1221,7 @@
         blockchainRelayWs.onclose = () => {
           clearInterval(relayPingTimer);
           blockchainRelayWs = null;
+          if (clientMode) setTimeout(startBrowserBlockchainRelay, 3000);
         };
 
         blockchainRelayWs.onerror = () => {
@@ -1040,13 +1238,11 @@
       }
     }
 
-    // 4. Live Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
+    // 5. Live Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
     function addIncomingAlerts(alerts) {
       if (!alerts || !alerts.length) return;
       alerts.forEach((a) => {
-        if (!unreadAlerts.some((x) => x.id === a.id)) {
-          unreadAlerts.unshift(a);
-        }
+        if (!unreadAlerts.some((x) => x.id === a.id)) unreadAlerts.unshift(a);
       });
       if (unreadAlerts.length > 40) unreadAlerts = unreadAlerts.slice(0, 40);
       renderAnomalySidePanel(true);
@@ -1064,12 +1260,7 @@
       }
 
       if (unreadAlerts.length === 0) {
-        list.innerHTML = `
-          <div class="empty-state">
-            No unread anomalies.<br />
-            New real-time detections will stream here automatically.
-          </div>
-        `;
+        list.innerHTML = `<div class="empty-state">No unread anomalies.<br />New real-time detections will stream here automatically.</div>`;
         return;
       }
 
@@ -1106,29 +1297,20 @@
       document.getElementById('popupSummary').textContent = alert.summary;
       document.getElementById('popupExplain').textContent = alert.explanation;
 
-      const metricsEl = document.getElementById('popupMetrics');
-      metricsEl.innerHTML = Object.entries(alert.metrics || {})
+      document.getElementById('popupMetrics').innerHTML = Object.entries(alert.metrics || {})
         .map(([k, v]) => `<div class="metric-chip"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`)
         .join('');
 
       document.getElementById('popupBackdrop').classList.add('show');
     }
 
-    function handleBackdropClick(e) {
-      if (e.target.id === 'popupBackdrop') closeDetailsModal();
-    }
-
-    function closeDetailsModal() {
-      document.getElementById('popupBackdrop').classList.remove('show');
-      selectedAlert = null;
-    }
+    function handleBackdropClick(e) { if (e.target.id === 'popupBackdrop') closeDetailsModal(); }
+    function closeDetailsModal() { document.getElementById('popupBackdrop').classList.remove('show'); selectedAlert = null; }
 
     function moveAlertToInbox(alert) {
       if (!alert) return;
       unreadAlerts = unreadAlerts.filter((a) => a.id !== alert.id);
-      if (!inboxItems.some((a) => a.id === alert.id)) {
-        inboxItems.unshift(alert);
-      }
+      if (!inboxItems.some((a) => a.id === alert.id)) inboxItems.unshift(alert);
       renderAnomalySidePanel(false);
       renderInbox(true);
       sendCommand({ action: 'mark_read', alert_id: alert.id });
@@ -1159,8 +1341,7 @@
       document.getElementById('cy').classList.add('frozen');
       document.getElementById('focusBanner').classList.add('visible');
       document.getElementById('resumeToolbarBtn').style.display = 'inline-flex';
-      document.getElementById('focusTargetLabel').textContent =
-        `Focused: ${alert.short_node} (${alert.type})`;
+      document.getElementById('focusTargetLabel').textContent = `Focused: ${alert.short_node} (${alert.type})`;
       updateFocusBufferUI();
 
       setTimeout(() => {
@@ -1174,21 +1355,13 @@
           node = cy.add({
             group: 'nodes',
             data: {
-              id: alert.primary_node,
-              label: alert.short_node,
-              degree: 6,
-              in_degree: 0,
-              out_degree: 0,
-              tx_count: 1,
-              total_in_btc: 0,
-              total_out_btc: 0,
-              is_anomaly: true,
-              anomaly_type: alert.type
+              id: alert.primary_node, label: alert.short_node, degree: 6,
+              in_degree: 0, out_degree: 0, tx_count: 1, total_in_btc: 0, total_out_btc: 0,
+              is_anomaly: true, anomaly_type: alert.type
             },
             position: { x: cx, y: cyMid }
           });
-          document.getElementById('focusBufferText').textContent =
-            'Node aged out of active window — showing archived reference node';
+          document.getElementById('focusBufferText').textContent = 'Node aged out of active window — showing archived reference node';
         }
 
         const neighborhood = node.closedNeighborhood();
@@ -1196,22 +1369,16 @@
         node.addClass('focused-target');
         node.select();
 
-        cy.animate({
-          center: { eles: node },
-          zoom: 1.75
-        }, { duration: 480 });
-
+        cy.animate({ center: { eles: node }, zoom: 1.75 }, { duration: 480 });
         showNodeInspector(node.data());
       }, 220);
     }
 
     function updateFocusBufferUI() {
       const el = document.getElementById('focusBufferText');
-      if (pausedUpdatesCount === 0) {
-        el.textContent = 'Live graph updates paused while inspecting';
-      } else {
-        el.textContent = `Live graph paused · ${pausedUpdatesCount} update(s) held in background`;
-      }
+      el.textContent = pausedUpdatesCount === 0
+        ? 'Live graph updates paused while inspecting'
+        : `Live graph paused · ${pausedUpdatesCount} update(s) held in background`;
     }
 
     function resumeLiveGraph() {
@@ -1224,18 +1391,26 @@
       closeInspector();
 
       if (cy) cy.elements().removeClass('dimmed focused-target');
-      if (!sendCommand({ action: 'get_snapshot' })) {
+
+      if (backendConnected && sendCommand({ action: 'get_snapshot' })) {
+        return;
+      }
+      if (clientMode) {
+        replaceGraphFromSnapshot({
+          nodes: [...clientGraph.nodes.values()],
+          edges: [...clientGraph.edges.values()]
+        });
+      } else {
         fitGraph();
       }
     }
 
-    // 5. Anomaly Inbox Rendering
+    // 6. Anomaly Inbox Rendering
     function renderInbox(bump = false) {
       const list = document.getElementById('inboxList');
       const badge = document.getElementById('inboxBadge');
       badge.textContent = inboxItems.length;
-      document.getElementById('kpiInboxSummary').textContent =
-        `${inboxItems.length} archived in Anomaly Inbox`;
+      document.getElementById('kpiInboxSummary').textContent = `${inboxItems.length} archived in Anomaly Inbox`;
 
       if (bump) {
         badge.classList.add('bump');
@@ -1258,9 +1433,7 @@
             <div class="inbox-desc">${escapeHtml(item.summary)}</div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span class="mono" style="color:var(--muted);">${escapeHtml(item.short_node)}</span>
-              <button class="btn btn-soft" style="padding:5px 10px; font-size:11.5px;" onclick="focusFromInbox('${escapeHtml(item.id)}')">
-                Focus Node
-              </button>
+              <button class="btn btn-soft" style="padding:5px 10px; font-size:11.5px;" onclick="focusFromInbox('${escapeHtml(item.id)}')">Focus Node</button>
             </div>
           </div>
         `;
@@ -1277,12 +1450,12 @@
       document.getElementById('drawerOverlay').classList.toggle('open', open);
     }
 
-    // 6. Stats, Feed, Controls & WebSocket
+    // 7. Stats, Feed, Controls & WebSocket Boot
     function updateStats(s) {
       if (!s) return;
       document.getElementById('kpiNodes').textContent = s.active_nodes;
       document.getElementById('kpiEdges').textContent = s.active_edges;
-      document.getElementById('kpiRate').textContent = `${s.tx_per_sec.toFixed(1)}/s`;
+      document.getElementById('kpiRate').textContent = `${Number(s.tx_per_sec || 0).toFixed(1)}/s`;
       document.getElementById('kpiComponents').textContent = `${s.components} connected clusters`;
     }
 
@@ -1315,7 +1488,7 @@
         clearTimeout(relayFallbackTimer);
         pill.classList.remove('fallback');
         txt.textContent = source === 'browser_relay'
-          ? 'Live · Blockchain.com (Direct Relay)'
+          ? 'Live · Blockchain.com (Relay)'
           : 'Live · Blockchain.com Mainnet';
       } else if (status === 'upstream_blocked') {
         pill.classList.add('fallback');
@@ -1331,7 +1504,8 @@
     }
 
     function simulateAnomaly() {
-      sendCommand({ action: 'simulate_anomaly' });
+      if (backendConnected && sendCommand({ action: 'simulate_anomaly' })) return;
+      processTxClientSide(buildClientSyntheticAnomalyTx());
     }
 
     function updateConfigUI() {
@@ -1340,22 +1514,41 @@
     }
 
     function pushConfig() {
-      sendCommand({
-        action: 'update_config',
-        window_seconds: parseInt(document.getElementById('winSlider').value, 10),
-        whale_btc_threshold: parseFloat(document.getElementById('whaleSlider').value)
-      });
+      const win = parseInt(document.getElementById('winSlider').value, 10);
+      const whale = parseFloat(document.getElementById('whaleSlider').value);
+      clientGraph.windowSeconds = win;
+      clientGraph.whaleBtcThreshold = whale;
+      sendCommand({ action: 'update_config', window_seconds: win, whale_btc_threshold: whale });
+    }
+
+    function activateDirectMainnetFallback() {
+      if (backendConnected || clientMode) return;
+      console.warn('[ARCNET] Backend /ws/stream unavailable; switching to direct Blockchain.com Mainnet stream.');
+      clientMode = true;
+      startBrowserBlockchainRelay();
     }
 
     function connectWebSocket() {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
       feedIsLive = false;
-      socket = new WebSocket(`${proto}://${location.host}/ws/stream`);
+      backendConnected = false;
+
+      // If Vercel /ws/stream doesn't connect within 3.5s, switch seamlessly to direct Mainnet stream
+      clearTimeout(backendConnectTimer);
+      backendConnectTimer = setTimeout(activateDirectMainnetFallback, 3500);
+
+      try {
+        socket = new WebSocket(`${proto}://${location.host}/ws/stream`);
+      } catch (e) {
+        activateDirectMainnetFallback();
+        return;
+      }
 
       socket.onopen = () => {
-        // Re-apply current slider settings if reconnecting after Vercel 300s session cycle
+        clearTimeout(backendConnectTimer);
+        backendConnected = true;
+        clientMode = false;
         pushConfig();
-        // If server upstream hasn't connected within 4s (e.g. cloud IP throttle), start browser relay
         clearTimeout(relayFallbackTimer);
         relayFallbackTimer = setTimeout(() => {
           if (!feedIsLive) startBrowserBlockchainRelay();
@@ -1370,7 +1563,6 @@
             upsertGraphElements(msg.snapshot.nodes, msg.snapshot.edges);
             updateStats(msg.snapshot.stats);
           }
-          // Preserve existing unread/inbox alerts across automatic Vercel reconnects
           if (msg.unread && msg.unread.length > 0) unreadAlerts = msg.unread;
           if (msg.inbox && msg.inbox.length > 0) inboxItems = msg.inbox;
           renderAnomalySidePanel(false);
@@ -1399,11 +1591,21 @@
         }
       };
 
+      socket.onerror = () => {
+        if (!backendConnected) activateDirectMainnetFallback();
+      };
+
       socket.onclose = () => {
         clearTimeout(relayFallbackTimer);
-        stopBrowserBlockchainRelay();
-        setFeedStatus('connecting');
-        setTimeout(connectWebSocket, 1800);
+        const wasConnected = backendConnected;
+        backendConnected = false;
+        if (wasConnected) {
+          stopBrowserBlockchainRelay();
+          setFeedStatus('connecting');
+          setTimeout(connectWebSocket, 2000);
+        } else {
+          activateDirectMainnetFallback();
+        }
       };
     }
 
