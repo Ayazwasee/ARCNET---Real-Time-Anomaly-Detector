@@ -1,19 +1,37 @@
-# Byte-compiled / optimized / DLL files
+# Byte-compiled / Python cache
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Virtual environments
-.env
 .venv/
 venv/
 ENV/
 env/
 
-# Distribution / packaging
+# Secrets & environment files (keep template tracked)
+.env
+.env.*
+!.env.example
+
+# ARCNET Phase 2 recorded streams & local logs
+data/*.jsonl
+*.log
+
+# PySpark / GraphX local runtime artifacts
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Build, packaging & deployment metadata
 build/
 dist/
 *.egg-info/
+.vercel/
+*.zip
 
 # OS & editor files
 .DS_Store
