@@ -857,11 +857,11 @@
         <div class="settings-body">
           <div class="slider-row">
             <label><span>Sliding Time Window</span><span id="winVal" class="mono">180 sec</span></label>
-            <input id="winSlider" type="range" min="60" max="420" step="30" value="180" oninput="updateConfigUI()" onchange="pushConfig()" />
+            <input id="winSlider" type="range" min="60" max="420" step="30" value="180" oninput="handleSliderChange(false)" onchange="handleSliderChange(true)" />
           </div>
           <div class="slider-row">
             <label><span>Whale Alert Threshold</span><span id="whaleVal" class="mono">2.0 BTC</span></label>
-            <input id="whaleSlider" type="range" min="0.5" max="25" step="0.5" value="2" oninput="updateConfigUI()" onchange="pushConfig()" />
+            <input id="whaleSlider" type="range" min="0.5" max="25" step="0.5" value="2" oninput="handleSliderChange(false)" onchange="handleSliderChange(true)" />
           </div>
           <p style="font-size:12px; color:var(--muted); line-height:1.5;">
             Older edges expire outside the sliding window to keep adjacency-list updates fast and highlight emerging anomalies immediately.
@@ -916,6 +916,7 @@
     let relayPingTimer = null;
     let relayFallbackTimer = null;
     let backendConnectTimer = null;
+    let configPushTimer = null;
     let lastNormalRelayAt = 0;
 
     let backendConnected = false;
@@ -967,7 +968,55 @@
       return false;
     }
 
-    // Single source of truth for Flagged Anomalies KPI, Side Panel Badge & Inbox Badge
+    // Live Slider Configuration Helpers (Always Reads DOM Source of Truth)
+    function getLiveSliderConfig() {
+      const winEl = document.getElementById('winSlider');
+      const whaleEl = document.getElementById('whaleSlider');
+      const win = winEl ? parseInt(winEl.value, 10) : clientGraph.windowSeconds;
+      const whale = whaleEl ? parseFloat(whaleEl.value) : clientGraph.whaleBtcThreshold;
+      clientGraph.windowSeconds = Number.isFinite(win) ? win : 180;
+      clientGraph.whaleBtcThreshold = Number.isFinite(whale) ? whale : 2.0;
+      return {
+        window_seconds: clientGraph.windowSeconds,
+        whale_btc_threshold: clientGraph.whaleBtcThreshold
+      };
+    }
+
+    function handleSliderChange(immediate = false) {
+      const cfg = getLiveSliderConfig();
+      document.getElementById('winVal').textContent = `${cfg.window_seconds} sec`;
+      document.getElementById('whaleVal').textContent = `${cfg.whale_btc_threshold.toFixed(1)} BTC`;
+
+      clearTimeout(configPushTimer);
+      if (immediate) {
+        pushConfig();
+      } else {
+        configPushTimer = setTimeout(pushConfig, 120);
+      }
+    }
+
+    function pushConfig() {
+      clearTimeout(configPushTimer);
+      const cfg = getLiveSliderConfig();
+      document.getElementById('winVal').textContent = `${cfg.window_seconds} sec`;
+      document.getElementById('whaleVal').textContent = `${cfg.whale_btc_threshold.toFixed(1)} BTC`;
+
+      sendCommand({
+        action: 'update_config',
+        window_seconds: cfg.window_seconds,
+        whale_btc_threshold: cfg.whale_btc_threshold
+      });
+
+      if (backendConnected) {
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cfg)
+        }).catch(() => {});
+      }
+    }
+
+    // Single Source of Truth for Flagged Anomalies KPI, Side Panel Badge & Inbox Badge
     function syncAllCounters(bumpSide = false, bumpInbox = false) {
       const unreadCount = unreadAlerts.length;
       const archivedCount = inboxItems.length;
@@ -1212,13 +1261,14 @@
 
     // 3. Fast Pre-Check so Anomalous Mainnet Transactions NEVER Get Throttled Out
     function isPotentiallyAnomalousTx(tx) {
+      const cfg = getLiveSliderConfig();
       const inputs = tx.inputs || [];
       const outs = tx.out || [];
       if (outs.length >= clientGraph.fanoutThreshold) return true;
       if (inputs.length >= clientGraph.faninThreshold) return true;
       let totalSats = 0;
       for (let i = 0; i < outs.length; i++) totalSats += (outs[i]?.value || 0);
-      if (totalSats / 1e8 >= clientGraph.whaleBtcThreshold) return true;
+      if (totalSats / 1e8 >= cfg.whale_btc_threshold) return true;
       return false;
     }
 
@@ -1300,6 +1350,7 @@
     }
 
     function processTxClientSide(tx) {
+      const liveCfg = getLiveSliderConfig();
       const now = Date.now() / 1000;
       const SAT = 1e8;
       const txHash = tx.hash || Math.random().toString(16).slice(2, 14);
@@ -1374,8 +1425,8 @@
         });
       }
 
-      // Prune expired edges
-      const cutoff = now - clientGraph.windowSeconds;
+      // Prune expired edges using live sliding window
+      const cutoff = now - liveCfg.window_seconds;
       const removedEdgesSet = new Set();
       clientGraph.edges.forEach((e, eid) => {
         if (e.timestamp < cutoff) { clientGraph.edges.delete(eid); removedEdgesSet.add(eid); }
@@ -1450,18 +1501,18 @@
         });
       }
 
-      // 2. Whale Volume Spike
-      if (totalBtc >= clientGraph.whaleBtcThreshold && !clientCooldown(`whale:${primarySender}`)) {
+      // 2. Whale Volume Spike (Uses Live Slider Threshold)
+      if (totalBtc >= liveCfg.whale_btc_threshold && !clientCooldown(`whale:${primarySender}`)) {
         alerts.push({
           id: makeId(),
           type: 'Whale Volume Spike',
-          severity: totalBtc >= clientGraph.whaleBtcThreshold * 3 ? 'high' : 'medium',
+          severity: totalBtc >= liveCfg.whale_btc_threshold * 3 ? 'high' : 'medium',
           score: Math.min(99, Math.floor(72 + Math.log1p(totalBtc) * 8)),
           timestamp: now,
           primary_node: primarySender,
           short_node: shortAddr(primarySender),
           tx_hash: txHash,
-          summary: `High-value transfer of ${totalBtc.toFixed(4)} BTC initiated by ${shortAddr(primarySender)} (threshold: ${clientGraph.whaleBtcThreshold} BTC).`,
+          summary: `High-value transfer of ${totalBtc.toFixed(4)} BTC initiated by ${shortAddr(primarySender)} (threshold: ${liveCfg.whale_btc_threshold.toFixed(1)} BTC).`,
           explanation: 'Edge weight jumped sharply above the active sliding-window baseline, signaling institutional treasury shifts or exchange cold-wallet sweeps.',
           metrics: {
             'Transfer (BTC)': +totalBtc.toFixed(4),
@@ -1539,7 +1590,7 @@
       return { hash: Math.random().toString(16).slice(2), inputs: [{ prev_out: { addr: sender, value: 9.5e8 } }], out };
     }
 
-    // 5. Direct Blockchain.com WebSocket (Anomalies Bypass Throttle!)
+    // 5. Direct Blockchain.com WebSocket (Anomalies Bypass Throttle)
     function startBrowserBlockchainRelay() {
       if (blockchainRelayWs && (blockchainRelayWs.readyState === WebSocket.OPEN || blockchainRelayWs.readyState === WebSocket.CONNECTING)) {
         return;
@@ -1568,7 +1619,6 @@
             const now = Date.now();
             const isPriorityAnomaly = isPotentiallyAnomalousTx(tx);
 
-            // Throttle only normal transactions; NEVER drop anomalous transactions
             if (!isPriorityAnomaly && now - lastNormalRelayAt < 280) return;
             if (!isPriorityAnomaly) lastNormalRelayAt = now;
 
@@ -1602,14 +1652,23 @@
     // 6. Live Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
     function addIncomingAlerts(alerts) {
       if (!alerts || !alerts.length) return;
+      const liveWhale = getLiveSliderConfig().whale_btc_threshold;
       let addedAny = false;
+
       alerts.forEach((a) => {
+        if (a.type === 'Whale Volume Spike') {
+          const transferBtc = parseFloat(a.metrics?.['Transfer (BTC)']);
+          if (Number.isFinite(transferBtc) && transferBtc < liveWhale) {
+            return; // Drop stale in-flight alert below updated slider threshold
+          }
+        }
         const exists = unreadAlerts.some((x) => x.id === a.id) || inboxItems.some((x) => x.id === a.id);
         if (!exists) {
           unreadAlerts.unshift(a);
           addedAny = true;
         }
       });
+
       if (unreadAlerts.length > 40) unreadAlerts = unreadAlerts.slice(0, 40);
       renderAnomalySidePanel(addedAny);
     }
@@ -1859,26 +1918,10 @@
     }
 
     function simulateAnomaly() {
+      // Flush latest slider values first so test alerts always use current threshold
+      pushConfig();
       if (backendConnected && sendCommand({ action: 'simulate_anomaly' })) return;
       processTxClientSide(buildClientSyntheticAnomalyTx());
-    }
-
-    function updateConfigUI() {
-      const win = parseInt(document.getElementById('winSlider').value, 10);
-      const whale = parseFloat(document.getElementById('whaleSlider').value);
-      document.getElementById('winVal').textContent = `${win} sec`;
-      document.getElementById('whaleVal').textContent = `${whale.toFixed(1)} BTC`;
-      // Update client thresholds live while dragging
-      clientGraph.windowSeconds = win;
-      clientGraph.whaleBtcThreshold = whale;
-    }
-
-    function pushConfig() {
-      const win = parseInt(document.getElementById('winSlider').value, 10);
-      const whale = parseFloat(document.getElementById('whaleSlider').value);
-      clientGraph.windowSeconds = win;
-      clientGraph.whaleBtcThreshold = whale;
-      sendCommand({ action: 'update_config', window_seconds: win, whale_btc_threshold: whale });
     }
 
     function activateDirectMainnetFallback() {
@@ -1967,6 +2010,7 @@
       };
     }
 
+    handleSliderChange(false);
     initCytoscape();
     connectWebSocket();
   </script>
