@@ -1,11 +1,8 @@
 """
-Milestone 3 — Graph Machine Learning Anomaly Engine (Module 8).
+Stage 2 & 3 — Graph Machine Learning Anomaly Engine (Module 8).
 
-Implements a lightweight, zero-heavy-dependency Graph ML pipeline ideal for real-time
-execution and serverless (Vercel) deployment:
-1. 8-Dimensional Dynamic Node Structural & Behavioral Embeddings
-2. Pure-Python Online Isolation Forest (Liu et al. path-length anomaly scoring)
-3. Per-Feature Z-Score Attribution explaining WHICH graph features triggered ML risk
+8-Dimensional Dynamic Structural & Behavioral Node Embeddings + Online Isolation Forest
+with per-feature Z-score attribution. Works uniformly across all 5 ingested domains.
 """
 
 from __future__ import annotations
@@ -25,17 +22,14 @@ FEATURE_NAMES = [
     "Out/In Ratio",
     "Local Clustering",
     "Avg Neighbor Deg",
-    "BTC Volume (log)",
-    "BTC Asymmetry",
+    "Edge Weight (log)",
+    "Flow Asymmetry",
     "Risk Taint Flow",
 ]
 
 
 def _c_factor(n: int) -> float:
-    """Average path length of unsuccessful search in a Binary Search Tree (Isolation Forest normalization)."""
-    if n <= 1:
-        return 1.0
-    if n == 2:
+    if n <= 2:
         return 1.0
     euler_gamma = 0.5772156649
     return 2.0 * (math.log(n - 1) + euler_gamma) - (2.0 * (n - 1) / n)
@@ -51,8 +45,6 @@ class _IsoNode:
 
 
 class OnlineIsolationForest:
-    """Pure-Python Isolation Forest retrained periodically on rolling node embeddings."""
-
     def __init__(self, n_trees: int = 36, subsample_size: int = 48, seed: int = 42):
         self.n_trees = n_trees
         self.subsample_size = subsample_size
@@ -67,9 +59,7 @@ class OnlineIsolationForest:
         if depth >= max_depth or n <= 1:
             return _IsoNode(size=n)
 
-        n_dims = len(data[0])
-        # Choose a random feature with non-zero variance
-        candidate_dims = list(range(n_dims))
+        candidate_dims = list(range(len(data[0])))
         self.rng.shuffle(candidate_dims)
         for dim in candidate_dims:
             col = [row[dim] for row in data]
@@ -98,7 +88,6 @@ class OnlineIsolationForest:
     def fit(self, vectors: List[List[float]]):
         if len(vectors) < 12:
             return
-
         n_dims = len(vectors[0])
         self.feature_means = []
         self.feature_stds = []
@@ -118,17 +107,13 @@ class OnlineIsolationForest:
         self.trained_samples = len(vectors)
 
     def score(self, vec: List[float]) -> Tuple[float, List[dict]]:
-        """Returns (anomaly_score_0_to_100, top_feature_attributions)."""
         if not self.trees:
             return 0.0, []
-
         sample_n = min(self.subsample_size, max(2, self.trained_samples))
         avg_depth = sum(self._path_length(vec, t, 0) for t in self.trees) / len(self.trees)
         raw_score = 2.0 ** (-avg_depth / _c_factor(sample_n))
-        # Map Isolation Forest [0.35, 0.85] -> intuitive [0, 100] score
         scaled = max(0.0, min(99.0, (raw_score - 0.35) / 0.45 * 100.0))
 
-        # Per-feature Z-score attribution for explainability
         attributions = []
         for idx, name in enumerate(FEATURE_NAMES):
             z = (vec[idx] - self.feature_means[idx]) / self.feature_stds[idx]
@@ -145,9 +130,7 @@ class OnlineIsolationForest:
 
 
 class GraphMLDetector:
-    """Extracts dynamic node embeddings and runs online Isolation Forest scoring."""
-
-    def __init__(self, ml_score_threshold: float = 74.0, retrain_every: int = 12):
+    def __init__(self, ml_score_threshold: float = 74.0, retrain_every: int = 10):
         self.ml_score_threshold = ml_score_threshold
         self.retrain_every = retrain_every
         self.forest = OnlineIsolationForest(n_trees=36, subsample_size=48)
@@ -157,9 +140,16 @@ class GraphMLDetector:
         self._ingest_counter = 0
         self.retrain_count = 0
 
+    def reset(self):
+        self.forest = OnlineIsolationForest(n_trees=36, subsample_size=48)
+        self.embedding_buffer.clear()
+        self.node_scores.clear()
+        self.node_attributions.clear()
+        self._ingest_counter = 0
+        self.retrain_count = 0
+
     @staticmethod
     def extract_embedding(G: nx.DiGraph, node_id: str, risk_taint: float = 0.0) -> List[float]:
-        """Builds an 8D structural + behavioral embedding vector for a wallet node."""
         if node_id not in G:
             return [0.0] * len(FEATURE_NAMES)
 
@@ -177,10 +167,10 @@ class GraphMLDetector:
         avg_nbr_deg = (sum(G.degree(nb) for nb in nbrs) / len(nbrs)) if nbrs else 0.0
 
         data = G.nodes[node_id]
-        in_btc = float(data.get("total_in_btc", 0.0))
-        out_btc = float(data.get("total_out_btc", 0.0))
-        total_btc = in_btc + out_btc
-        btc_asym = (out_btc - in_btc) / (total_btc + 1e-6)
+        in_val = float(data.get("total_in_btc", 0.0))
+        out_val = float(data.get("total_out_btc", 0.0))
+        total_val = in_val + out_val
+        asym = (out_val - in_val) / (total_val + 1e-6)
 
         return [
             math.log1p(in_deg),
@@ -188,8 +178,8 @@ class GraphMLDetector:
             min(12.0, out_in_ratio),
             clustering,
             math.log1p(avg_nbr_deg),
-            math.log1p(total_btc),
-            btc_asym,
+            math.log1p(total_val),
+            asym,
             risk_taint / 100.0,
         ]
 
