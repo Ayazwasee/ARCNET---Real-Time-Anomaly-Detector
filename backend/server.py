@@ -1,40 +1,42 @@
 """
-ARCNET Phase 2 FastAPI Server.
+ARCNET Stage 3 FastAPI Server.
 
-Works seamlessly on:
-- Localhost / Codespaces (`python3 -m uvicorn backend.server:app --reload`)
-- Docker Compose (with local Neo4j + ARCNET)
-- Vercel Fluid Compute (`pyproject.toml` entrypoint `backend.server:app`)
+Supports live switching across all 5 graph domains (`blockchain`, `ripe_bgp`, `wikimedia`,
+`bluesky`, `gdelt`), Time-Travel Replay, Neo4j Cypher Forensics, Louvain Community Evolution,
+Online Isolation Forest ML, Incremental vs. Full Runtime Benchmarks, and Partitioning.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
-import random
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Set
 
-import websockets
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from backend.blockchain_graph import (
-    BLOCKCHAIN_WS_URL,
     DynamicBlockchainGraph,
     build_peel_chain_and_wash_loop_txs,
     build_synthetic_tx,
 )
 from backend.config import settings
+from backend.sources_adapter import (
+    SUPPORTED_SOURCES,
+    normalize_raw_event,
+    stream_domain_source,
+)
 from backend.storage_neo4j import Neo4jForensicStore
 
 FRONTEND_INDEX = Path(__file__).resolve().parent.parent / "frontend" / "index.html"
 RECORDING_FILE = Path(__file__).resolve().parent.parent / settings.recording_path
 
 default_config = {
+    "source": settings.default_source,
     "window_seconds": settings.window_seconds,
     "whale_btc_threshold": settings.whale_btc_threshold,
     "ml_score_threshold": settings.ml_score_threshold,
@@ -58,7 +60,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="ARCNET Phase 2 — Real-Time Dynamic Graph & Forensic Anomaly Platform",
+    title="ARCNET Stage 3 — Multi-Domain Dynamic Graph & Forensic Platform",
     lifespan=lifespan,
 )
 
@@ -83,8 +85,7 @@ def apply_config_to_engine(
     engine.partitioner.num_partitions = max(2, min(int(partition_count), 8))
 
 
-def load_replay_batch() -> List[dict]:
-    """Loads recorded JSONL transactions if present; otherwise generates a rich demo replay set."""
+def load_replay_batch(source: str) -> List[dict]:
     txs: List[dict] = []
     if RECORDING_FILE.exists():
         try:
@@ -97,8 +98,8 @@ def load_replay_batch() -> List[dict]:
             txs = []
 
     if len(txs) < 15:
-        txs = [build_synthetic_tx(force_anomaly=(i % 9 == 0)) for i in range(28)]
-        txs.extend(build_peel_chain_and_wash_loop_txs())
+        txs = [build_synthetic_tx(force_anomaly=(i % 8 == 0), source=source) for i in range(26)]
+        txs.extend(build_peel_chain_and_wash_loop_txs(source=source))
     return txs
 
 
@@ -111,7 +112,8 @@ async def serve_dashboard():
 async def health():
     return {
         "status": "ok",
-        "service": "ARCNET Phase 2",
+        "service": "ARCNET Stage 3",
+        "sources": list(SUPPORTED_SOURCES.keys()),
         "config": default_config,
         "storage": forensic_store.status_summary(),
     }
@@ -150,6 +152,7 @@ async def websocket_endpoint(ws: WebSocket):
         partition_count=default_config["partition_count"],
         recording_path=str(RECORDING_FILE),
     )
+    engine.switch_domain(default_config["source"])
     active_engines.add(engine)
 
     unread_alerts: List[dict] = []
@@ -158,18 +161,17 @@ async def websocket_endpoint(ws: WebSocket):
     send_lock = asyncio.Lock()
     stop_event = asyncio.Event()
     browser_relay_active = asyncio.Event()
-    stream_mode = {"mode": "live", "speed": 1.0}  # "live" | "replay"
+    stream_mode = {"mode": "live", "speed": 1.0}
 
     async def send_safe(payload: dict):
         async with send_lock:
             await ws.send_json(payload)
 
-    async def process_and_emit_tx(tx: dict):
-        update = engine.add_transaction(tx)
+    async def process_and_emit_event(ev: dict):
+        update = engine.add_canonical_event(ev)
         if not update:
             return
 
-        # Mirror edges locally for fast forensic fallback
         raw_edges = update.pop("raw_edges", [])
         if raw_edges:
             forensic_store.record_edges_local(raw_edges)
@@ -178,81 +180,38 @@ async def websocket_endpoint(ws: WebSocket):
             unread_alerts.insert(0, alert)
             if len(unread_alerts) > 40:
                 unread_alerts.pop()
-            # Persist flagged anomaly + 2-hop ego-network to Neo4j asynchronously
             ego_edges = engine.get_ego_edges(alert["primary_node"], radius=2)
             asyncio.create_task(forensic_store.persist_anomaly(alert, ego_edges))
 
         await send_safe(update)
 
-    async def server_upstream_loop():
-        try:
-            await send_safe({"type": "status", "status": "connecting"})
-            async with websockets.connect(
-                BLOCKCHAIN_WS_URL,
-                ping_interval=25,
-                ping_timeout=15,
-                open_timeout=6,
-            ) as upstream_ws:
-                await upstream_ws.send(json.dumps({"op": "unconfirmed_sub"}))
-                if browser_relay_active.is_set():
-                    return
-                await send_safe({"type": "status", "status": "live", "source": "server"})
-
-                while not stop_event.is_set() and not browser_relay_active.is_set():
-                    if stream_mode["mode"] != "live":
-                        await asyncio.sleep(0.3)
-                        continue
-                    raw_msg = await asyncio.wait_for(upstream_ws.recv(), timeout=10.0)
-                    if browser_relay_active.is_set() or stream_mode["mode"] != "live":
-                        continue
-                    data = json.loads(raw_msg)
-                    if data.get("op") != "utx":
-                        continue
-                    await process_and_emit_tx(data.get("x", {}))
-                    await asyncio.sleep(0.25)
-
-        except asyncio.CancelledError:
-            return
-        except Exception as exc:
-            print(f"[ARCNET] Server upstream unavailable ({exc}); requesting browser relay.")
-            if stop_event.is_set() or browser_relay_active.is_set():
-                return
-
-            await send_safe({"type": "status", "status": "upstream_blocked"})
-            try:
-                await asyncio.wait_for(browser_relay_active.wait(), timeout=8.0)
-                return
-            except asyncio.TimeoutError:
-                pass
-
-            await send_safe({"type": "status", "status": "fallback"})
-            while not stop_event.is_set() and not browser_relay_active.is_set():
-                if stream_mode["mode"] != "live":
-                    await asyncio.sleep(0.3)
-                    continue
-                tx = build_synthetic_tx(force_anomaly=(random.random() < 0.08))
-                await process_and_emit_tx(tx)
-                await asyncio.sleep(0.85)
+    async def on_source_status(status: str, source_name: str):
+        await send_safe({"type": "status", "status": status, "source": source_name})
 
     async def replay_loop():
-        """Milestone 4: Time-Travel Stream Replay loop (1x / 2x / 5x)."""
-        batch = load_replay_batch()
         idx = 0
+        cached_src = ""
+        batch: List[dict] = []
         while not stop_event.is_set():
             if stream_mode["mode"] != "replay":
                 await asyncio.sleep(0.25)
                 continue
-            tx = dict(batch[idx % len(batch)])
-            tx["_override_ts"] = time.time()
+            if cached_src != engine.active_source or not batch:
+                cached_src = engine.active_source
+                batch = load_replay_batch(cached_src)
+                idx = 0
+            ev = dict(batch[idx % len(batch)])
+            ev["_override_ts"] = time.time()
             idx += 1
-            await process_and_emit_tx(tx)
+            await process_and_emit_event(ev)
             speed = max(0.5, float(stream_mode["speed"]))
-            await asyncio.sleep(max(0.12, 0.75 / speed))
+            await asyncio.sleep(max(0.15, 0.7 / speed))
 
     await send_safe(
         {
             "type": "init",
             "status": "connecting",
+            "sources": SUPPORTED_SOURCES,
             "snapshot": engine.get_snapshot(),
             "unread": unread_alerts,
             "inbox": inbox_alerts,
@@ -260,7 +219,16 @@ async def websocket_endpoint(ws: WebSocket):
         }
     )
 
-    upstream_task = asyncio.create_task(server_upstream_loop())
+    upstream_task = asyncio.create_task(
+        stream_domain_source(
+            source_getter=lambda: engine.active_source,
+            mode_getter=lambda: stream_mode["mode"],
+            browser_relay_event=browser_relay_active,
+            on_canonical_event=process_and_emit_event,
+            on_status=on_source_status,
+            stop_event=stop_event,
+        )
+    )
     replay_task = asyncio.create_task(replay_loop())
 
     try:
@@ -273,27 +241,41 @@ async def websocket_endpoint(ws: WebSocket):
 
             action = cmd.get("action")
 
-            if action == "ingest_tx":
+            if action == "switch_source":
+                new_src = str(cmd.get("source", "blockchain"))
+                if new_src in SUPPORTED_SOURCES:
+                    default_config["source"] = new_src
+                    browser_relay_active.clear()
+                    engine.switch_domain(new_src)
+                    await send_safe(
+                        {
+                            "type": "source_switched",
+                            "source": new_src,
+                            "source_meta": SUPPORTED_SOURCES[new_src],
+                            "snapshot": engine.get_snapshot(),
+                        }
+                    )
+
+            elif action == "ingest_tx":
                 if stream_mode["mode"] != "live":
                     continue
                 if not browser_relay_active.is_set():
                     browser_relay_active.set()
-                    if not upstream_task.done():
-                        upstream_task.cancel()
-                    await send_safe(
-                        {"type": "status", "status": "live", "source": "browser_relay"}
-                    )
-                tx = cmd.get("tx")
-                if isinstance(tx, dict):
-                    await process_and_emit_tx(tx)
+                    await send_safe({"type": "status", "status": "live", "source": "browser_relay"})
+                raw_tx = cmd.get("tx")
+                src_hint = str(cmd.get("source", engine.active_source))
+                if isinstance(raw_tx, dict) and src_hint == engine.active_source:
+                    ev = normalize_raw_event(src_hint, raw_tx)
+                    if ev:
+                        await process_and_emit_event(ev)
 
             elif action == "simulate_anomaly":
-                tx = build_synthetic_tx(force_anomaly=True)
-                await process_and_emit_tx(tx)
+                ev = build_synthetic_tx(force_anomaly=True, source=engine.active_source)
+                await process_and_emit_event(ev)
 
             elif action == "simulate_peel_chain":
-                for tx in build_peel_chain_and_wash_loop_txs():
-                    await process_and_emit_tx(tx)
+                for ev in build_peel_chain_and_wash_loop_txs(source=engine.active_source):
+                    await process_and_emit_event(ev)
                     await asyncio.sleep(0.08)
 
             elif action == "mark_read":
@@ -380,16 +362,6 @@ async def websocket_endpoint(ws: WebSocket):
                         "type": "mode_updated",
                         "mode": stream_mode["mode"],
                         "speed": stream_mode["speed"],
-                    }
-                )
-
-            elif action == "toggle_recording":
-                engine.recording_enabled = bool(cmd.get("enabled", False))
-                await send_safe(
-                    {
-                        "type": "recording_status",
-                        "enabled": engine.recording_enabled,
-                        "recorded_count": engine._recorded_count,
                     }
                 )
 

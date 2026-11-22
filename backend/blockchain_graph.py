@@ -1,20 +1,18 @@
 """
-ARCNET Core Dynamic Graph Engine (Phase 1 + Phase 2).
+ARCNET Stage 3 Core Dynamic Graph Engine.
 
-Combines:
-- Self-updating directed weighted NetworkX DiGraph with sliding-window pruning
-- 4 Explainable Phase 1 LSGA anomaly detectors (Fan-Out, Whale, Fan-In, Cluster Bridge)
-- Phase 2 Louvain Community Detection, Personalized PageRank Taint & Betweenness
-- Phase 2 Online Isolation Forest ML Behavioral Anomaly Scoring (8D embeddings)
-- Phase 2 Edge-Cut vs. Vertex-Cut Graph Partitioning
-- Phase 2 JSONL Stream Recorder & Synthetic Peel-Chain / Wash-Loop Generators
+Upgrades:
+- Domain-agnostic canonical ingestion (`add_canonical_event`) across all 5 sources
+- Diff-only WebSocket payloads (never resends unchanged nodes -> eliminates browser lag)
+- Live Incremental vs. Full Graph Runtime Benchmark (`LSGA.txt` Improvement #1)
+- Multi-domain anomaly descriptions (BTC Whale, BGP Route Leak/Hijack, Wiki Bot Burst,
+  Bluesky Reply Swarm, GDELT Entity Surge, plus Online ML Behavioral Outliers)
 """
 
 from __future__ import annotations
 
 import json
 import math
-import os
 import random
 import statistics
 import time
@@ -28,13 +26,17 @@ import networkx as nx
 from backend.analytics_advanced import AdvancedGraphAnalytics
 from backend.ml_detector import GraphMLDetector
 from backend.partitioning import GraphPartitioner
+from backend.sources_adapter import (
+    SUPPORTED_SOURCES,
+    build_domain_synthetic_event,
+    normalize_raw_event,
+)
 
-BLOCKCHAIN_WS_URL = "wss://ws.blockchain.info/inv"
 SATOSHI_PER_BTC = 1e8
 
 
 class DynamicBlockchainGraph:
-    """Self-updating dynamic blockchain graph with Phase 2 analytics, ML & partitioning."""
+    """Self-updating dynamic graph supporting 5 real-time domains + LSGA benchmarks."""
 
     def __init__(
         self,
@@ -49,6 +51,7 @@ class DynamicBlockchainGraph:
         recording_path: Optional[str] = None,
     ):
         self.G = nx.DiGraph()
+        self.active_source = "blockchain"
         self.window_seconds = window_seconds
         self.max_nodes = max_nodes
         self.whale_btc_threshold = whale_btc_threshold
@@ -56,8 +59,7 @@ class DynamicBlockchainGraph:
         self.fanin_threshold = fanin_threshold
         self.z_threshold = z_threshold
 
-        # Phase 2 modular subsystems
-        self.analytics = AdvancedGraphAnalytics(recompute_interval_sec=2.0)
+        self.analytics = AdvancedGraphAnalytics(recompute_interval_sec=2.5)
         self.ml_detector = GraphMLDetector(ml_score_threshold=ml_score_threshold, retrain_every=10)
         self.partitioner = GraphPartitioner(num_partitions=partition_count)
 
@@ -65,12 +67,34 @@ class DynamicBlockchainGraph:
         self.tx_timestamps: deque = deque(maxlen=150)
         self.recent_alert_cooldown: Dict[str, float] = {}
         self.total_tx_processed = 0
+
+        # Stage 3: Live Incremental vs. Full Graph Runtime Benchmark (LSGA.txt Improvement #1)
+        self.benchmark_history: deque = deque(maxlen=25)
+        self._last_full_bench_at: float = 0.0
+        self._last_full_ms: float = 0.0
+
         self.recording_path = recording_path
         self.recording_enabled = False
         self._recorded_count = 0
 
+    def switch_domain(self, new_source: str):
+        if new_source not in SUPPORTED_SOURCES:
+            new_source = "blockchain"
+        self.active_source = new_source
+        self.G.clear()
+        self.anomaly_seeds.clear()
+        self.tx_timestamps.clear()
+        self.recent_alert_cooldown.clear()
+        self.benchmark_history.clear()
+        self._last_full_ms = 0.0
+        self.total_tx_processed = 0
+        self.analytics.reset()
+        self.ml_detector.reset()
+
     @staticmethod
     def short_addr(addr: str) -> str:
+        if any(addr.startswith(p) for p in ("AS", "Editor:", "Page:", "bsky:", "Org:", "Person:", "Loc:")):
+            return addr if len(addr) <= 24 else addr[:22] + "…"
         if len(addr) <= 12:
             return addr
         return f"{addr[:6]}...{addr[-4:]}"
@@ -83,17 +107,16 @@ class DynamicBlockchainGraph:
         self.recent_alert_cooldown[key] = now
         return False
 
-    def _record_tx_if_enabled(self, tx: dict):
+    def _record_event_if_enabled(self, ev: dict):
         if not self.recording_enabled or not self.recording_path or self._recorded_count >= 500:
             return
         try:
             path = Path(self.recording_path)
             path.parent.mkdir(parents=True, exist_ok=True)
             with path.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(tx) + "\n")
+                fh.write(json.dumps(ev) + "\n")
             self._recorded_count += 1
         except Exception:
-            # Read-only filesystem (e.g. Vercel serverless) — disable gracefully
             self.recording_enabled = False
 
     def _check_cluster_bridge(
@@ -116,7 +139,6 @@ class DynamicBlockchainGraph:
         return None
 
     def get_ego_edges(self, center_node: str, radius: int = 2) -> List[dict]:
-        """Extracts up to 2-hop ego-network edges around a flagged node for Neo4j persistence."""
         if center_node not in self.G:
             return []
         try:
@@ -135,45 +157,74 @@ class DynamicBlockchainGraph:
         except Exception:
             return []
 
+    def _measure_full_vs_incremental(self, touched_nodes: Set[str], inc_elapsed_ms: float, now: float) -> Optional[dict]:
+        """
+        Benchmarks Incremental Neighbourhood Metric Update O(Δ) vs. Full Graph Recalculation O(V+E)
+        (LSGA.txt Improvement #1). Runs full-graph reference pass every ~2.5s to avoid slowing stream.
+        """
+        n = self.G.number_of_nodes()
+        m = self.G.number_of_edges()
+        if n < 4:
+            return None
+
+        if (now - self._last_full_bench_at) >= 2.2 or self._last_full_ms <= 0.0:
+            self._last_full_bench_at = now
+            t0 = time.perf_counter()
+            undir = self.G.to_undirected(as_view=True)
+            _ = dict(self.G.in_degree())
+            _ = dict(self.G.out_degree())
+            _ = nx.clustering(undir)
+            if m > 0:
+                _ = nx.pagerank(self.G, alpha=0.85, max_iter=25)
+            self._last_full_ms = max(0.05, (time.perf_counter() - t0) * 1000.0)
+
+        inc_ms = max(0.01, inc_elapsed_ms)
+        speedup = round(self._last_full_ms / inc_ms, 2)
+        point = {
+            "nodes": n,
+            "edges": m,
+            "touched": len(touched_nodes),
+            "incremental_ms": round(inc_ms, 3),
+            "full_ms": round(self._last_full_ms, 3),
+            "speedup": speedup,
+            "timestamp": now,
+        }
+        self.benchmark_history.append(point)
+        return point
+
     def add_transaction(self, tx: dict) -> dict:
-        now = float(tx.get("_override_ts", time.time()))
-        tx_hash = tx.get("hash", uuid.uuid4().hex[:16])
-        self._record_tx_if_enabled(tx)
-
-        senders_raw: List[Tuple[str, float]] = []
-        for inp in tx.get("inputs", []):
-            prev = inp.get("prev_out") or {}
-            addr = prev.get("addr")
-            val_btc = (prev.get("value", 0) or 0) / SATOSHI_PER_BTC
-            if addr:
-                senders_raw.append((addr, val_btc))
-
-        receivers_raw: List[Tuple[str, float]] = []
-        for out in tx.get("out", []):
-            addr = out.get("addr")
-            val_btc = (out.get("value", 0) or 0) / SATOSHI_PER_BTC
-            if addr:
-                receivers_raw.append((addr, val_btc))
-
-        if not senders_raw or not receivers_raw:
+        """Backward-compatible wrapper that normalizes raw Blockchain or canonical events."""
+        ev = normalize_raw_event(self.active_source, tx)
+        if not ev:
             return {}
+        return self.add_canonical_event(ev)
 
-        sender_addrs = list(dict.fromkeys([s[0] for s in senders_raw]))
+    def add_canonical_event(self, ev: dict) -> dict:
+        t_inc_start = time.perf_counter()
+        now = float(ev.get("_override_ts", ev.get("timestamp", time.time())))
+        tx_hash = str(ev.get("hash", uuid.uuid4().hex[:14]))
+        unit = str(ev.get("unit", SUPPORTED_SOURCES.get(self.active_source, {}).get("unit", "BTC")))
+        domain_ctx = str(ev.get("domain_context", self.active_source))
+        self._record_event_if_enabled(ev)
+
+        sender_addrs = list(dict.fromkeys([s for s in ev.get("senders", []) if s]))
         receiver_map: Dict[str, float] = {}
-        for addr, btc in receivers_raw:
-            receiver_map[addr] = receiver_map.get(addr, 0.0) + btc
+        for addr, val in ev.get("receivers", []):
+            if addr:
+                receiver_map[addr] = receiver_map.get(addr, 0.0) + float(val)
         receiver_addrs = list(receiver_map.keys())
+
+        if not sender_addrs or not receiver_addrs:
+            return {}
 
         raw_in_count = len(sender_addrs)
         raw_out_count = len(receiver_addrs)
-        total_btc = sum(receiver_map.values())
+        total_weight = sum(receiver_map.values())
 
         bridge_info = self._check_cluster_bridge(sender_addrs, receiver_addrs)
 
         capped_senders = sender_addrs[:4]
-        capped_receivers = sorted(
-            receiver_addrs, key=lambda a: receiver_map[a], reverse=True
-        )[:12]
+        capped_receivers = sorted(receiver_addrs, key=lambda a: receiver_map[a], reverse=True)[:12]
 
         touched_nodes: Set[str] = set()
         new_edges_payload: List[dict] = []
@@ -182,15 +233,15 @@ class DynamicBlockchainGraph:
         for r in capped_receivers:
             if r == primary_sender:
                 continue
-            btc_amt = round(receiver_map[r], 6)
-            self._upsert_edge(primary_sender, r, btc_amt, now, tx_hash)
+            w_amt = round(receiver_map[r], 5)
+            self._upsert_edge(primary_sender, r, w_amt, now, tx_hash)
             touched_nodes.update([primary_sender, r])
             new_edges_payload.append(
                 {
                     "id": f"{primary_sender}__{r}",
                     "source": primary_sender,
                     "target": r,
-                    "weight": btc_amt,
+                    "weight": w_amt,
                     "timestamp": now,
                     "tx_hash": tx_hash[:10],
                 }
@@ -201,15 +252,15 @@ class DynamicBlockchainGraph:
             for s in capped_senders[1:]:
                 if s == primary_receiver:
                     continue
-                btc_amt = round(receiver_map[primary_receiver] / len(capped_senders), 6)
-                self._upsert_edge(s, primary_receiver, btc_amt, now, tx_hash)
+                w_amt = round(receiver_map[primary_receiver] / len(capped_senders), 5)
+                self._upsert_edge(s, primary_receiver, w_amt, now, tx_hash)
                 touched_nodes.update([s, primary_receiver])
                 new_edges_payload.append(
                     {
                         "id": f"{s}__{primary_receiver}",
                         "source": s,
                         "target": primary_receiver,
-                        "weight": btc_amt,
+                        "weight": w_amt,
                         "timestamp": now,
                         "tx_hash": tx_hash[:10],
                     }
@@ -220,7 +271,7 @@ class DynamicBlockchainGraph:
 
         removed_nodes, removed_edges = self.prune_expired(now)
 
-        # Phase 2 ML Evaluation on primary sender
+        # Incremental local ML & anomaly check ONLY on affected neighbourhood
         taint_before = self.analytics.risk_taint.get(primary_sender, 0.0)
         ml_score, ml_attributions = self.ml_detector.evaluate_node(
             self.G, primary_sender, risk_taint=taint_before
@@ -228,13 +279,14 @@ class DynamicBlockchainGraph:
         if primary_sender in self.G.nodes:
             self.G.nodes[primary_sender]["ml_score"] = ml_score
 
-        # Run Rule + ML Hybrid Anomaly Detection
         alerts = self._detect_anomalies(
             primary_sender=primary_sender,
             capped_receivers=capped_receivers,
             raw_in_count=raw_in_count,
             raw_out_count=raw_out_count,
-            total_btc=total_btc,
+            total_weight=total_weight,
+            unit=unit,
+            domain_ctx=domain_ctx,
             tx_hash=tx_hash,
             bridge_info=bridge_info,
             ml_score=ml_score,
@@ -242,7 +294,9 @@ class DynamicBlockchainGraph:
             now=now,
         )
 
-        # Seed PageRank risk propagation & flag anomalous nodes
+        inc_elapsed_ms = (time.perf_counter() - t_inc_start) * 1000.0
+        bench_point = self._measure_full_vs_incremental(touched_nodes, inc_elapsed_ms, now)
+
         for alert in alerts:
             n_id = alert["primary_node"]
             self.anomaly_seeds[n_id] = max(self.anomaly_seeds.get(n_id, 0.0), float(alert["score"]))
@@ -250,20 +304,26 @@ class DynamicBlockchainGraph:
                 self.G.nodes[n_id]["is_anomaly"] = True
                 self.G.nodes[n_id]["anomaly_type"] = alert["type"]
 
-        # Periodic Phase 2 Analytics (Louvain + Personalized PageRank + Betweenness) & Partitioning
+        # Amortized global analytics every 2.5s (and emit ONLY changed community/taint nodes to prevent UI lag)
+        prev_comm_snap = dict(self.analytics.communities)
         recomputed = self.analytics.maybe_recompute(
             self.G, self.anomaly_seeds, force=(len(alerts) > 0)
         )
         if recomputed:
             self.partitioner.compute(self.G)
 
-        # If analytics refreshed, include updated node styling for top affected nodes
         nodes_to_emit = set(touched_nodes)
         if recomputed:
-            nodes_to_emit.update(list(self.G.nodes))
+            for nid in self.G.nodes:
+                if (
+                    prev_comm_snap.get(nid) != self.analytics.communities.get(nid)
+                    or self.analytics.risk_taint.get(nid, 0.0) >= 25.0
+                ):
+                    nodes_to_emit.add(nid)
 
         return {
             "type": "graph_update",
+            "source": self.active_source,
             "timestamp": now,
             "added_nodes": [self._serialize_node(n) for n in nodes_to_emit if n in self.G],
             "added_edges": [
@@ -279,17 +339,19 @@ class DynamicBlockchainGraph:
             "analytics": self.analytics.get_summary() if recomputed else None,
             "ml": self.ml_detector.get_summary() if recomputed else None,
             "partitioning": self.partitioner.last_report if recomputed else None,
+            "benchmark": bench_point,
             "tx_summary": {
                 "hash": tx_hash[:12],
                 "sender": self.short_addr(primary_sender),
                 "outputs": raw_out_count,
-                "btc": round(total_btc, 4),
+                "btc": round(total_weight, 3),
+                "unit": unit,
                 "ml_score": ml_score,
                 "is_anomaly": len(alerts) > 0,
             },
         }
 
-    def _upsert_edge(self, u: str, v: str, btc: float, now: float, tx_hash: str):
+    def _upsert_edge(self, u: str, v: str, weight: float, now: float, tx_hash: str):
         for node_id in (u, v):
             if node_id not in self.G:
                 self.G.add_node(
@@ -307,16 +369,16 @@ class DynamicBlockchainGraph:
             self.G.nodes[node_id]["last_seen"] = now
             self.G.nodes[node_id]["tx_count"] += 1
 
-        self.G.nodes[u]["total_out_btc"] += btc
-        self.G.nodes[v]["total_in_btc"] += btc
+        self.G.nodes[u]["total_out_btc"] += weight
+        self.G.nodes[v]["total_in_btc"] += weight
 
         if self.G.has_edge(u, v):
-            self.G[u][v]["weight"] += btc
+            self.G[u][v]["weight"] += weight
             self.G[u][v]["count"] += 1
             self.G[u][v]["timestamp"] = now
             self.G[u][v]["tx_hash"] = tx_hash
         else:
-            self.G.add_edge(u, v, weight=btc, count=1, timestamp=now, tx_hash=tx_hash)
+            self.G.add_edge(u, v, weight=weight, count=1, timestamp=now, tx_hash=tx_hash)
 
     def prune_expired(self, now: float) -> Tuple[List[str], List[str]]:
         cutoff = now - self.window_seconds
@@ -355,7 +417,9 @@ class DynamicBlockchainGraph:
         capped_receivers: List[str],
         raw_in_count: int,
         raw_out_count: int,
-        total_btc: float,
+        total_weight: float,
+        unit: str,
+        domain_ctx: str,
         tx_hash: str,
         bridge_info: Optional[Tuple[str, str, int, int]],
         ml_score: float,
@@ -377,6 +441,17 @@ class DynamicBlockchainGraph:
             else 0.0
         )
 
+        domain_titles = {
+            "blockchain": ("Fan-Out Star Burst", "Whale Volume Spike", "Fan-In Consolidation Surge", "Structural Cluster Bridge"),
+            "ripe_bgp": ("BGP Route Leak Fan-Out", "Prefix Announcement Surge", "BGP Transit Convergence", "Cross-Tier AS Hijack Bridge"),
+            "wikimedia": ("Mass Bot Edit Burst", "Large Article Overwrite", "Edit-War Convergence", "Cross-Topic Edit Bridge"),
+            "bluesky": ("Coordinated Reply Swarm", "Viral Mention Spike", "Trending Hub Convergence", "Cross-Community Bridge"),
+            "gdelt": ("Multi-Entity Event Burst", "High-Salience Media Surge", "Entity Convergence Hub", "Cross-Region Event Bridge"),
+        }
+        t_fanout, t_heavy, t_fanin, t_bridge = domain_titles.get(
+            self.active_source, domain_titles["blockchain"]
+        )
+
         # 1. Fan-Out Star Burst
         if (
             raw_out_count >= self.fanout_threshold
@@ -386,7 +461,7 @@ class DynamicBlockchainGraph:
             alerts.append(
                 {
                     "id": uuid.uuid4().hex[:10],
-                    "type": "Fan-Out Star Burst",
+                    "type": t_fanout,
                     "severity": "high" if raw_out_count >= 12 else "medium",
                     "score": score,
                     "ml_score": ml_score,
@@ -396,33 +471,32 @@ class DynamicBlockchainGraph:
                     "short_node": self.short_addr(primary_sender),
                     "tx_hash": tx_hash,
                     "summary": (
-                        f"Wallet {self.short_addr(primary_sender)} dispersed "
-                        f"{total_btc:.4f} BTC across {raw_out_count} distinct wallets "
-                        f"(Out-Degree Z = {sender_z:.2f}, Clustering = {sender_clustering})."
+                        f"{self.short_addr(primary_sender)} fanned out {total_weight:.3f} {unit} "
+                        f"across {raw_out_count} targets (Out-Degree Z = {sender_z:.2f}, Clustering = {sender_clustering})."
                     ),
                     "explanation": (
-                        "A sharp spike in Out-Degree Centrality paired with near-zero local clustering "
-                        "signals automated batch payouts, mixing dispersion, or dust attacks."
+                        f"[{domain_ctx}] Sharp spike in Out-Degree Centrality with near-zero local "
+                        "clustering indicates star-shaped dispersion, route leaks, or automated bursts."
                     ),
                     "metrics": {
                         "Out-Degree (Raw)": raw_out_count,
                         "Degree Z-Score": round(sender_z, 2),
                         "Clustering Coeff": sender_clustering,
-                        "Volume (BTC)": round(total_btc, 4),
+                        f"Volume ({unit})": round(total_weight, 3),
                     },
                 }
             )
 
-        # 2. Whale Volume Spike
-        if total_btc >= self.whale_btc_threshold and not self._is_on_cooldown(
+        # 2. Heavy Edge / Whale Volume Spike
+        if total_weight >= self.whale_btc_threshold and not self._is_on_cooldown(
             f"whale:{primary_sender}"
         ):
-            score = min(99, int(72 + math.log1p(total_btc) * 8))
+            score = min(99, int(72 + math.log1p(total_weight) * 8))
             alerts.append(
                 {
                     "id": uuid.uuid4().hex[:10],
-                    "type": "Whale Volume Spike",
-                    "severity": "high" if total_btc >= self.whale_btc_threshold * 3 else "medium",
+                    "type": t_heavy,
+                    "severity": "high" if total_weight >= self.whale_btc_threshold * 3 else "medium",
                     "score": score,
                     "ml_score": ml_score,
                     "ml_attributions": ml_attributions,
@@ -431,16 +505,15 @@ class DynamicBlockchainGraph:
                     "short_node": self.short_addr(primary_sender),
                     "tx_hash": tx_hash,
                     "summary": (
-                        f"High-value transfer of {total_btc:.4f} BTC initiated by "
-                        f"{self.short_addr(primary_sender)} (threshold: {self.whale_btc_threshold:.1f} BTC)."
+                        f"High-magnitude event of {total_weight:.3f} {unit} from "
+                        f"{self.short_addr(primary_sender)} (threshold: {self.whale_btc_threshold:.1f} {unit})."
                     ),
                     "explanation": (
-                        "Edge weight jumped sharply above the active sliding-window baseline, "
-                        "indicating institutional treasury shifts or exchange cold-wallet sweeps."
+                        f"[{domain_ctx}] Edge weight spiked above the active sliding-window cutoff."
                     ),
                     "metrics": {
-                        "Transfer (BTC)": round(total_btc, 4),
-                        "Inputs / Outputs": f"{raw_in_count} -> {raw_out_count}",
+                        f"Magnitude ({unit})": round(total_weight, 3),
+                        "Sources / Targets": f"{raw_in_count} -> {raw_out_count}",
                         "Active Out-Degree": sender_out_deg,
                         "ML Risk Score": ml_score,
                     },
@@ -454,7 +527,7 @@ class DynamicBlockchainGraph:
                 alerts.append(
                     {
                         "id": uuid.uuid4().hex[:10],
-                        "type": "Fan-In Consolidation Surge",
+                        "type": t_fanin,
                         "severity": "high" if raw_in_count >= 10 else "medium",
                         "score": min(96, 66 + raw_in_count * 2),
                         "ml_score": ml_score,
@@ -464,16 +537,15 @@ class DynamicBlockchainGraph:
                         "short_node": self.short_addr(target),
                         "tx_hash": tx_hash,
                         "summary": (
-                            f"Wallet {self.short_addr(target)} consolidated funds from "
-                            f"{raw_in_count} distinct input addresses totaling {total_btc:.4f} BTC."
+                            f"{self.short_addr(target)} converged {raw_in_count} distinct sources "
+                            f"totaling {total_weight:.3f} {unit}."
                         ),
                         "explanation": (
-                            "A rapid rise in In-Degree Centrality signals multiple wallets sweeping "
-                            "balances into a single hub—typical of deposit sweeps or fund aggregation."
+                            f"[{domain_ctx}] Rapid rise in In-Degree Centrality indicates multiple nodes converging on a single hub."
                         ),
                         "metrics": {
-                            "Input Wallets": raw_in_count,
-                            "Volume (BTC)": round(total_btc, 4),
+                            "Input Sources": raw_in_count,
+                            f"Volume ({unit})": round(total_weight, 3),
                             "Active In-Degree": self.G.in_degree(target) if target in self.G else 1,
                             "ML Risk Score": ml_score,
                         },
@@ -487,7 +559,7 @@ class DynamicBlockchainGraph:
                 alerts.append(
                     {
                         "id": uuid.uuid4().hex[:10],
-                        "type": "Structural Cluster Bridge",
+                        "type": t_bridge,
                         "severity": "high",
                         "score": 86,
                         "ml_score": ml_score,
@@ -497,23 +569,22 @@ class DynamicBlockchainGraph:
                         "short_node": self.short_addr(u),
                         "tx_hash": tx_hash,
                         "summary": (
-                            f"Transaction linked two isolated wallet clusters "
-                            f"({size_u} nodes <-> {size_v} nodes) via {self.short_addr(u)} -> {self.short_addr(v)}."
+                            f"Link bridged two isolated clusters ({size_u} nodes <-> {size_v} nodes) "
+                            f"via {self.short_addr(u)} -> {self.short_addr(v)}."
                         ),
                         "explanation": (
-                            "Shortest-path distance between two independent connected components "
-                            "dropped from infinity to 1, flagging a cross-cluster structural bridge."
+                            f"[{domain_ctx}] Shortest-path distance between two independent connected components dropped from infinity to 1."
                         ),
                         "metrics": {
                             "Cluster A Size": size_u,
                             "Cluster B Size": size_v,
-                            "Bridge Value (BTC)": round(total_btc, 4),
+                            f"Bridge Weight ({unit})": round(total_weight, 3),
                             "ML Risk Score": ml_score,
                         },
                     }
                 )
 
-        # 5. Phase 2 ML Behavioral Anomaly (catches subtle multi-feature outliers below fixed rules)
+        # 5. Online ML Behavioral Anomaly
         if (
             not alerts
             and ml_score >= self.ml_detector.ml_score_threshold
@@ -537,14 +608,12 @@ class DynamicBlockchainGraph:
                         f"(ML Risk = {ml_score}/100; primary driver: {top_feat})."
                     ),
                     "explanation": (
-                        "Even without tripping fixed volume or degree cutoffs, this wallet's 8D "
-                        "structural embedding isolated rapidly in the online forest—detecting stealth "
-                        "structuring or abnormal flow asymmetry."
+                        f"[{domain_ctx}] 8D structural embedding isolated rapidly in the online forest without tripping fixed cutoffs."
                     ),
                     "metrics": {
                         "ML Risk Score": f"{ml_score}/100",
                         "Primary Driver": top_feat,
-                        "Volume (BTC)": round(total_btc, 4),
+                        f"Weight ({unit})": round(total_weight, 3),
                         "Out-Degree": sender_out_deg,
                     },
                 }
@@ -561,8 +630,8 @@ class DynamicBlockchainGraph:
             "degree": self.G.degree(n),
             "in_degree": self.G.in_degree(n),
             "out_degree": self.G.out_degree(n),
-            "total_in_btc": round(data.get("total_in_btc", 0.0), 5),
-            "total_out_btc": round(data.get("total_out_btc", 0.0), 5),
+            "total_in_btc": round(data.get("total_in_btc", 0.0), 4),
+            "total_out_btc": round(data.get("total_out_btc", 0.0), 4),
             "tx_count": data.get("tx_count", 1),
             "is_anomaly": data.get("is_anomaly", False),
             "anomaly_type": data.get("anomaly_type"),
@@ -579,7 +648,7 @@ class DynamicBlockchainGraph:
             "id": f"{u}__{v}",
             "source": u,
             "target": v,
-            "weight": round(float(data.get("weight", 0.0)), 5),
+            "weight": round(float(data.get("weight", 0.0)), 4),
             "count": data.get("count", 1),
             "tx_hash": str(data.get("tx_hash", ""))[:10],
         }
@@ -589,12 +658,15 @@ class DynamicBlockchainGraph:
         if not self.partitioner.last_report:
             self.partitioner.compute(self.G)
         return {
+            "source": self.active_source,
+            "source_meta": SUPPORTED_SOURCES.get(self.active_source, SUPPORTED_SOURCES["blockchain"]),
             "nodes": [self._serialize_node(n) for n in self.G.nodes],
             "edges": [self._serialize_edge(u, v) for u, v in self.G.edges],
             "stats": self.get_stats(time.time()),
             "analytics": self.analytics.get_summary(),
             "ml": self.ml_detector.get_summary(),
             "partitioning": self.partitioner.last_report,
+            "benchmarks": list(self.benchmark_history),
         }
 
     def get_stats(self, now: float) -> dict:
@@ -602,7 +674,12 @@ class DynamicBlockchainGraph:
         undirected = self.G.to_undirected(as_view=True)
         components = nx.number_connected_components(undirected) if self.G.number_of_nodes() > 0 else 0
         anomaly_nodes = sum(1 for _, d in self.G.nodes(data=True) if d.get("is_anomaly"))
+        src_meta = SUPPORTED_SOURCES.get(self.active_source, SUPPORTED_SOURCES["blockchain"])
         return {
+            "source": self.active_source,
+            "unit": src_meta["unit"],
+            "node_noun": src_meta["node_noun"],
+            "edge_noun": src_meta["edge_noun"],
             "active_nodes": self.G.number_of_nodes(),
             "active_edges": self.G.number_of_edges(),
             "tx_per_sec": round(recent_10s / 10.0, 2),
@@ -618,73 +695,50 @@ class DynamicBlockchainGraph:
         }
 
 
-def build_synthetic_tx(force_anomaly: bool = False) -> dict:
-    def rand_addr():
-        return "bc1q" + uuid.uuid4().hex[:24]
-
-    if force_anomaly:
-        sender = rand_addr()
-        outputs = [
-            {"addr": rand_addr(), "value": int(random.uniform(0.35, 0.95) * SATOSHI_PER_BTC)}
-            for _ in range(12)
-        ]
-        return {
-            "hash": uuid.uuid4().hex,
-            "time": int(time.time()),
-            "inputs": [{"prev_out": {"addr": sender, "value": int(9.2 * SATOSHI_PER_BTC)}}],
-            "out": outputs,
-        }
-
-    sender = rand_addr()
-    out_cnt = random.choices([1, 2, 3], weights=[0.5, 0.35, 0.15])[0]
-    outputs = [
-        {"addr": rand_addr(), "value": int(random.uniform(0.01, 0.45) * SATOSHI_PER_BTC)}
-        for _ in range(out_cnt)
-    ]
-    return {
-        "hash": uuid.uuid4().hex,
-        "time": int(time.time()),
-        "inputs": [{"prev_out": {"addr": sender, "value": int(0.6 * SATOSHI_PER_BTC)}}],
-        "out": outputs,
-    }
+def build_synthetic_tx(force_anomaly: bool = False, source: str = "blockchain") -> dict:
+    return build_domain_synthetic_event(source=source, force_anomaly=force_anomaly)
 
 
-def build_peel_chain_and_wash_loop_txs() -> List[dict]:
-    """
-    Generates a realistic 4-hop Peel Chain + 3-hop Wash-Trading Cycle so you can
-    immediately test and demonstrate Milestone 1 Cypher Forensics & Milestone 2 Taint Flow.
-    """
+def build_peel_chain_and_wash_loop_txs(source: str = "blockchain") -> List[dict]:
+    """Generates a 4-hop Peel/Propagation Chain + 3-hop Circular Loop adapted to the active domain."""
     now = time.time()
-    w = [f"bc1qforensic{i}{uuid.uuid4().hex[:14]}" for i in range(6)]
-    txs = []
+    prefixes = {
+        "blockchain": ("bc1qforensic", "BTC"),
+        "ripe_bgp": ("AS6451", "Prefixes"),
+        "wikimedia": ("Editor:Ring_", "KB Δ"),
+        "bluesky": ("bsky:ring_", "Interactions"),
+        "gdelt": ("Org:Syndicate_", "Mentions"),
+    }
+    pref, unit = prefixes.get(source, ("bc1qforensic", "BTC"))
+    w = [f"{pref}{i}_{uuid.uuid4().hex[:8]}" for i in range(6)]
+    events = []
 
-    # 4-hop Peel Chain: w0 -> w1 -> w2 -> w3 (peeling ~0.2 BTC each hop)
-    peel_amounts = [3.6, 3.3, 2.95]
-    for idx, amt in enumerate(peel_amounts):
-        peel_off = f"bc1qpeel{idx}{uuid.uuid4().hex[:16]}"
-        txs.append(
+    amounts = [3.6, 3.3, 2.95]
+    for idx, amt in enumerate(amounts):
+        peel_off = f"{pref}peel_{idx}_{uuid.uuid4().hex[:6]}"
+        events.append(
             {
-                "hash": uuid.uuid4().hex,
-                "time": int(now + idx * 3),
+                "source": source,
+                "hash": uuid.uuid4().hex[:14],
                 "_override_ts": now + idx * 3,
-                "inputs": [{"prev_out": {"addr": w[idx], "value": int((amt + 0.25) * SATOSHI_PER_BTC)}}],
-                "out": [
-                    {"addr": w[idx + 1], "value": int(amt * SATOSHI_PER_BTC)},
-                    {"addr": peel_off, "value": int(0.22 * SATOSHI_PER_BTC)},
-                ],
+                "senders": [w[idx]],
+                "receivers": [(w[idx + 1], amt), (peel_off, 0.22)],
+                "unit": unit,
+                "domain_context": "Multi-Hop Peel / Propagation Chain",
             }
         )
 
-    # 3-hop Wash Loop: w3 -> w4 -> w5 -> w3
     loop_pairs = [(w[3], w[4], 1.8), (w[4], w[5], 1.75), (w[5], w[3], 1.7)]
     for idx, (u, v, amt) in enumerate(loop_pairs):
-        txs.append(
+        events.append(
             {
-                "hash": uuid.uuid4().hex,
-                "time": int(now + 12 + idx * 2),
+                "source": source,
+                "hash": uuid.uuid4().hex[:14],
                 "_override_ts": now + 12 + idx * 2,
-                "inputs": [{"prev_out": {"addr": u, "value": int(amt * SATOSHI_PER_BTC)}}],
-                "out": [{"addr": v, "value": int(amt * SATOSHI_PER_BTC)}],
+                "senders": [u],
+                "receivers": [(v, amt)],
+                "unit": unit,
+                "domain_context": "Circular Loop Pattern",
             }
         )
-    return txs
+    return events
