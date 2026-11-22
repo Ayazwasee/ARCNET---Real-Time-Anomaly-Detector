@@ -1,23 +1,23 @@
 """
-Milestone 4 — Graph Partitioning & Sharding Benchmark (Module 3).
+Stage 4 — Graph Partitioning & Processing-Cost Benchmark (Module 3 & LSGA.txt Improvement #3).
 
-Compares two core large-scale graph partitioning strategies on the live Bitcoin graph:
+Compares two core large-scale graph partitioning strategies on the live evolving graph:
 1. Edge-Cut Partitioning (Linear Deterministic Greedy / LDG): assigns vertices to K shards;
-   cross-shard edges incur network communication (measured by Edge-Cut Ratio).
+   cross-shard edges incur network message passing (measured by Edge-Cut Ratio & Network Comm Cost).
 2. Vertex-Cut Partitioning (PowerGraph-style Greedy): assigns edges to K shards and replicates
-   high-degree hub vertices across shards (measured by Vertex Replication Factor).
+   high-degree hub vertices across shards (measured by Replication Factor & State Sync Overhead).
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 import networkx as nx
 
 
 class GraphPartitioner:
-    """Computes live Edge-Cut vs. Vertex-Cut partitioning metrics on the active graph."""
+    """Computes live Edge-Cut vs. Vertex-Cut partitioning metrics & processing requirements."""
 
     def __init__(self, num_partitions: int = 4):
         self.num_partitions = max(2, min(int(num_partitions), 8))
@@ -38,21 +38,31 @@ class GraphPartitioner:
                 "k": K,
                 "nodes": n,
                 "edges": m,
-                "edge_cut": {"cut_edges": 0, "cut_ratio_pct": 0.0, "balance_ratio": 1.0, "shard_loads": [0] * K},
-                "vertex_cut": {"replication_factor": 1.0, "mirrored_vertices": 0, "balance_ratio": 1.0, "shard_loads": [0] * K},
+                "power_law_skew": 1.0,
+                "edge_cut": {
+                    "cut_edges": 0,
+                    "cut_ratio_pct": 0.0,
+                    "balance_ratio": 1.0,
+                    "comm_cost_units": 0,
+                    "shard_loads": [0] * K,
+                },
+                "vertex_cut": {
+                    "replication_factor": 1.0,
+                    "mirrored_vertices": 0,
+                    "balance_ratio": 1.0,
+                    "sync_cost_units": 0,
+                    "shard_loads": [0] * K,
+                },
                 "recommendation": "Waiting for active edges to benchmark sharding...",
             }
             return self.last_report
 
-        # --- 1. Edge-Cut (Linear Deterministic Greedy - LDG) ---
-        # Assigns each vertex to the partition containing most of its already-placed neighbors,
-        # penalized by remaining shard capacity.
+        # 1. Edge-Cut (Linear Deterministic Greedy - LDG)
         max_cap = max(1.0, (n / K) * 1.15)
         ec_assign: Dict[str, int] = {}
         ec_loads = [0] * K
         undirected = G.to_undirected(as_view=True)
 
-        # Place high-degree hubs first for better locality
         ordered_nodes = sorted(G.nodes, key=lambda u: G.degree(u), reverse=True)
         for u in ordered_nodes:
             nbr_counts = [0] * K
@@ -75,9 +85,10 @@ class GraphPartitioner:
         cut_edges = sum(1 for u, v in G.edges if ec_assign[u] != ec_assign[v])
         cut_ratio = round((cut_edges / m) * 100.0, 2)
         ec_balance = round(max(ec_loads) / max(1e-6, (n / K)), 2)
+        # Processing requirement: each cut edge requires 2 cross-worker RPC messages per superstep
+        ec_comm_cost = cut_edges * 2
 
-        # --- 2. Vertex-Cut (PowerGraph Greedy Edge Assignment) ---
-        # Assigns each edge to a shard minimizing new vertex replicas while balancing edge counts.
+        # 2. Vertex-Cut (PowerGraph Greedy Edge Assignment)
         vc_vertex_mirrors: Dict[str, Set[int]] = defaultdict(set)
         vc_edge_loads = [0] * K
         avg_edges = max(1.0, m / K)
@@ -89,13 +100,11 @@ class GraphPartitioner:
             if common:
                 chosen = min(common, key=lambda p: vc_edge_loads[p])
             elif pu or pv:
-                # Favor the partition of the lower-degree endpoint to avoid cutting non-hubs
                 candidates = pu if (pu and (not pv or G.degree(u) <= G.degree(v))) else pv
                 chosen = min(candidates, key=lambda p: vc_edge_loads[p])
             else:
                 chosen = min(range(K), key=lambda p: vc_edge_loads[p])
 
-            # Soft load balance override if shard is heavily overloaded
             if vc_edge_loads[chosen] > avg_edges * 1.45:
                 chosen = min(range(K), key=lambda p: vc_edge_loads[p])
 
@@ -107,25 +116,25 @@ class GraphPartitioner:
         replication_factor = round(total_replicas / max(1, len(vc_vertex_mirrors)), 3)
         mirrored_vertices = sum(1 for s in vc_vertex_mirrors.values() if len(s) > 1)
         vc_balance = round(max(vc_edge_loads) / max(1e-6, (m / K)), 2)
+        # Processing requirement: only mirrored vertices synchronize state across their replica shards
+        vc_sync_cost = sum(max(0, len(s) - 1) for s in vc_vertex_mirrors.values())
 
-        # Store LDG partition IDs on nodes for Cytoscape shard visualization
         self.node_partition = ec_assign
 
-        # Determine power-law skew (max degree vs avg degree)
         degrees = [d for _, d in G.degree()]
         max_deg = max(degrees) if degrees else 0
         avg_deg = (sum(degrees) / len(degrees)) if degrees else 1.0
         skew_ratio = round(max_deg / max(0.1, avg_deg), 2)
 
-        if skew_ratio >= 3.0 or cut_ratio > 25.0:
+        if vc_sync_cost < ec_comm_cost or skew_ratio >= 2.8:
             rec = (
-                f"Vertex-Cut recommended: Power-law hub skew is {skew_ratio}x "
-                f"(Replication Factor = {replication_factor} vs Edge-Cut {cut_ratio}% cut)."
+                f"Vertex-Cut wins (Sync Cost {vc_sync_cost} vs Edge-Cut Comm {ec_comm_cost} msgs): "
+                f"Hub skew = {skew_ratio}x, Replication Factor = {replication_factor}."
             )
         else:
             rec = (
-                f"Edge-Cut (LDG) is efficient right now ({cut_ratio}% cross-shard edges, "
-                f"Vertex-Cut RF = {replication_factor})."
+                f"Edge-Cut (LDG) is efficient ({cut_ratio}% cut, {ec_comm_cost} msgs vs "
+                f"Vertex-Cut {vc_sync_cost} sync ops, RF = {replication_factor})."
             )
 
         self.last_report = {
@@ -137,12 +146,14 @@ class GraphPartitioner:
                 "cut_edges": cut_edges,
                 "cut_ratio_pct": cut_ratio,
                 "balance_ratio": ec_balance,
+                "comm_cost_units": ec_comm_cost,
                 "shard_loads": ec_loads,
             },
             "vertex_cut": {
                 "replication_factor": replication_factor,
                 "mirrored_vertices": mirrored_vertices,
                 "balance_ratio": vc_balance,
+                "sync_cost_units": vc_sync_cost,
                 "shard_loads": vc_edge_loads,
             },
             "recommendation": rec,
