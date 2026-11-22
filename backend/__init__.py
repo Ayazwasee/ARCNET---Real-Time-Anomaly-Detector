@@ -1,7 +1,8 @@
-"""ARCNET Phase 2 backend package for real-time dynamic graph analytics and anomaly detection."""
+"""ARCNET Stage 3 backend package — Multi-Domain Ingestion & 60 FPS Dynamic Graph Engine."""
 
 __all__ = [
     "config",
+    "sources_adapter",
     "blockchain_graph",
     "storage_neo4j",
     "analytics_advanced",
