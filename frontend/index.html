@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ARCNET Phase 2 — Dynamic Graph Analytics &amp; Forensic Anomaly Platform</title>
+  <title>ARCNET Stage 3 &amp; 4 — 60 FPS Multi-Domain Dynamic Graph &amp; LSGA Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -52,481 +52,293 @@
       position: sticky;
       top: 0;
       z-index: 40;
-      backdrop-filter: blur(14px);
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.94);
       border-bottom: 1px solid var(--border);
-      padding: 13px 26px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: linear-gradient(135deg, var(--primary), var(--sky));
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.02em;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
-    }
-    .brand h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
-    .phase-tag {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: var(--violet-soft);
-      color: var(--violet);
-      border: 1px solid #ddd6fe;
-    }
-    .brand p { font-size: 12px; color: var(--muted); }
-
-    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      background: var(--emerald-soft);
-      color: #047857;
-      border: 1px solid #a7f3d0;
-      transition: all 0.3s var(--ease);
-    }
-    .status-pill.fallback {
-      background: var(--amber-soft);
-      color: #b45309;
-      border-color: #fde68a;
-    }
-    .status-pill.replay {
-      background: var(--violet-soft);
-      color: var(--violet);
-      border-color: #ddd6fe;
-    }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      position: relative;
-    }
-    .pulse-dot::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 50%;
-      border: 2px solid currentColor;
-      animation: ripple 1.8s infinite ease-out;
-    }
-    @keyframes ripple {
-      0% { transform: scale(0.8); opacity: 0.9; }
-      100% { transform: scale(2.1); opacity: 0; }
-    }
-
-    /* Segmented Controls */
-    .segmented {
-      display: inline-flex;
-      background: var(--surface-soft);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 3px;
-      gap: 2px;
-    }
-    .seg-btn {
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 7px;
-      cursor: pointer;
-      transition: all 0.2s var(--ease);
-    }
-    .seg-btn.active {
-      background: var(--surface);
-      color: var(--primary);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 8px 13px;
-      border-radius: 10px;
-      font-size: 12.5px;
-      font-weight: 600;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s, border-color 0.2s;
-    }
-    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); border-color: #cbd5e1; }
-    .btn:active { transform: translateY(0); }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
-    }
-    .btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
-
-    .btn-soft { background: var(--primary-soft); color: var(--primary); border-color: #bfdbfe; }
-    .btn-violet { background: var(--violet-soft); color: var(--violet); border-color: #ddd6fe; }
-    .btn-live {
-      background: linear-gradient(135deg, var(--primary), var(--sky));
-      color: #fff;
-      border: none;
-      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
-    }
-
-    .badge {
-      min-width: 20px;
-      height: 20px;
-      padding: 0 6px;
-      border-radius: 999px;
-      background: var(--rose);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-grid;
-      place-items: center;
-      transition: transform 0.35s var(--ease);
-    }
-    .badge.soft-blue { background: var(--primary); }
-    .badge.bump { transform: scale(1.3); }
-
-    /* Container */
-    .container {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 22px 26px 48px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    /* KPI Row */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-    }
-    @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-
-    .kpi-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 17px 20px;
-      box-shadow: var(--shadow-sm);
-      transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
-    }
-    .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .kpi-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .kpi-value { font-size: 27px; font-weight: 700; margin-top: 7px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; transition: transform 0.25s var(--ease); }
-    .kpi-value.bump { transform: scale(1.08); }
-    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .kpi-value.accent { color: var(--primary); }
-    .kpi-value.danger { color: var(--rose); }
-    .kpi-value.violet { color: var(--violet); }
-
-    /* Cards */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: var(--shadow-sm);
-      overflow: hidden;
-    }
-    .card-header {
-      padding: 15px 20px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
     }
-    .card-title-group h2 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .card-title-group p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--sky));
+      display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 14px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .brand h1 { font-size: 15.5px; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+    .phase-tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 2px 7px; border-radius: 999px; background: var(--emerald-soft); color: #047857; border: 1px solid #a7f3d0;
+    }
+    .brand p { font-size: 11.5px; color: var(--muted); }
+
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .source-select {
+      padding: 7px 11px;
+      border-radius: 10px;
+      border: 1px solid #bfdbfe;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; background: var(--emerald-soft); color: #047857; border: 1px solid #a7f3d0;
+    }
+    .status-pill.fallback { background: var(--amber-soft); color: #b45309; border-color: #fde68a; }
+    .status-pill.replay { background: var(--violet-soft); color: var(--violet); border-color: #ddd6fe; }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+    .segmented {
+      display: inline-flex; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px;
+    }
+    .seg-btn {
+      border: none; background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 600;
+      padding: 5px 9px; border-radius: 7px; cursor: pointer;
+    }
+    .seg-btn.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 10px;
+      font-size: 12.5px; font-weight: 600; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text); cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: #cbd5e1; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-soft { background: var(--primary-soft); color: var(--primary); border-color: #bfdbfe; }
+    .btn-violet { background: var(--violet-soft); color: var(--violet); border-color: #ddd6fe; }
+    .btn-live { background: linear-gradient(135deg, var(--primary), var(--sky)); color: #fff; border: none; }
+
+    .badge {
+      min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--rose);
+      color: #fff; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center;
+    }
+    .badge.soft-blue { background: var(--primary); }
+
+    /* Main Container */
+    .container {
+      max-width: 1440px; margin: 0 auto; padding: 20px 24px 44px; display: flex; flex-direction: column; gap: 18px;
+    }
+
+    /* KPI Row */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 15px 18px; box-shadow: var(--shadow-sm);
+    }
+    .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-value { font-size: 25px; font-weight: 700; margin-top: 6px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+    .kpi-sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+    .kpi-value.accent { color: var(--primary); }
+    .kpi-value.danger { color: var(--rose); }
+    .kpi-value.violet { color: var(--violet); }
+
+    /* Cards */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .card-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .card-title-group h2 { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .card-title-group p { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
     /* Workspace Grid */
-    .workspace-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 365px;
-      gap: 20px;
-      align-items: start;
-    }
+    .workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
     @media (max-width: 1080px) { .workspace-grid { grid-template-columns: 1fr; } }
 
-    /* Toggle Switch */
-    .toggle-wrap { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
-    .switch {
-      width: 44px; height: 24px; border-radius: 999px; background: #cbd5e1; position: relative; transition: background 0.3s var(--ease);
-    }
+    .toggle-wrap { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; user-select: none; }
+    .switch { width: 42px; height: 22px; border-radius: 999px; background: #cbd5e1; position: relative; transition: background 0.2s; }
     .switch::after {
-      content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff;
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2); transition: transform 0.3s var(--ease);
+      content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s;
     }
     .switch.active { background: var(--primary); }
     .switch.active::after { transform: translateX(20px); }
 
-    /* Collapsible Graph */
-    .graph-shell { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s var(--ease); }
+    .graph-shell { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.35s ease; }
     .graph-shell.open { grid-template-rows: 1fr; }
     .graph-inner { overflow: hidden; position: relative; }
 
     .graph-toolbar {
-      padding: 11px 20px;
-      background: #f8fafc;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
+      padding: 10px 18px; background: #f8fafc; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     }
-    .legend { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--muted); font-weight: 500; flex-wrap: wrap; }
-    .legend-item { display: flex; align-items: center; gap: 6px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend { display: flex; align-items: center; gap: 13px; font-size: 11.5px; color: var(--muted); font-weight: 500; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; }
 
     .canvas-stage { position: relative; }
     #cy {
-      width: 100%;
-      height: 520px;
-      background: radial-gradient(#cbd5e1 1px, transparent 1px);
-      background-size: 24px 24px;
+      width: 100%; height: 500px;
       background-color: #fcfdff;
-      transition: box-shadow 0.35s var(--ease);
+      background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+      background-size: 24px 24px;
     }
     #cy.frozen { box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.45); background-color: #fffdf7; }
 
-    /* Focus Mode Floating Banner */
+    /* Focus Banner */
     .focus-banner {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translate(-50%, -22px);
-      z-index: 20;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 10px 14px 10px 18px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      border: 1px solid #fde68a;
-      box-shadow: var(--shadow-md);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.35s var(--ease);
-      max-width: 92%;
+      position: absolute; top: 14px; left: 50%; transform: translate(-50%, -18px); z-index: 20;
+      display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-radius: 12px;
+      background: rgba(255, 255, 255, 0.97); border: 1px solid #fde68a; box-shadow: var(--shadow-md);
+      opacity: 0; pointer-events: none; transition: all 0.25s ease; max-width: 92%;
     }
     .focus-banner.visible { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
-    .focus-pill { font-size: 12px; font-weight: 700; color: #b45309; background: var(--amber-soft); padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
-    .focus-meta { font-size: 12.5px; color: var(--text); font-weight: 500; }
+    .focus-pill { font-size: 11.5px; font-weight: 700; color: #b45309; background: var(--amber-soft); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+    .focus-meta { font-size: 12px; font-weight: 500; }
     .focus-meta span { display: block; font-size: 11px; color: var(--muted); }
 
     /* Node Inspector */
     .node-inspector {
-      position: absolute;
-      right: 16px;
-      bottom: 16px;
-      width: 315px;
-      background: rgba(255, 255, 255, 0.97);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 16px;
-      box-shadow: var(--shadow-md);
-      transform: translateY(16px);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s var(--ease);
-      z-index: 15;
+      position: absolute; right: 14px; bottom: 14px; width: 305px; background: rgba(255, 255, 255, 0.98);
+      border: 1px solid var(--border); border-radius: 13px; padding: 13px 15px; box-shadow: var(--shadow-md);
+      transform: translateY(12px); opacity: 0; pointer-events: none; transition: all 0.2s ease; z-index: 15;
     }
     .node-inspector.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
     .inspector-addr {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--primary);
-      word-break: break-all;
-      margin: 6px 0 10px;
-      background: var(--primary-soft);
-      padding: 6px 8px;
-      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--primary);
+      word-break: break-all; margin: 6px 0 9px; background: var(--primary-soft); padding: 6px 8px; border-radius: 7px;
     }
-    .inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; font-size: 12px; margin-bottom: 10px; }
-    .inspector-stat { background: var(--surface-soft); padding: 6px 9px; border-radius: 8px; }
+    .inspector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11.5px; margin-bottom: 9px; }
+    .inspector-stat { background: var(--surface-soft); padding: 6px 8px; border-radius: 7px; }
     .inspector-stat span { display: block; font-size: 10px; color: var(--muted); }
-    .inspector-stat strong { font-size: 12.5px; }
+    .inspector-stat strong { font-size: 12px; }
 
     /* Live Anomalies Side Panel */
-    .anomaly-panel { display: flex; flex-direction: column; height: 644px; }
-    @media (max-width: 1080px) { .anomaly-panel { height: auto; max-height: 460px; } }
-    .anomaly-panel-list {
-      flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: #fafcff;
-    }
+    .anomaly-panel { display: flex; flex-direction: column; height: 618px; }
+    @media (max-width: 1080px) { .anomaly-panel { height: auto; max-height: 440px; } }
+    .anomaly-panel-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 9px; background: #fafcff; }
     .anomaly-card {
       background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--rose);
-      border-radius: 13px; padding: 13px 14px; cursor: pointer;
-      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s;
-      animation: cardPopIn 0.4s var(--ease);
+      border-radius: 12px; padding: 12px 13px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .anomaly-card.medium { border-left-color: var(--amber); }
     .anomaly-card.ml { border-left-color: var(--violet); }
-    .anomaly-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #fecdd3; }
-    @keyframes cardPopIn {
-      from { opacity: 0; transform: translateX(16px) scale(0.98); }
-      to { opacity: 1; transform: translateX(0) scale(1); }
-    }
-    .anomaly-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-    .anomaly-card-title { font-size: 13px; font-weight: 700; }
+    .anomaly-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .anomaly-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+    .anomaly-card-title { font-size: 12.5px; font-weight: 700; }
     .score-tag {
-      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-      padding: 2px 8px; border-radius: 999px; background: var(--rose-soft); color: var(--rose); white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+      padding: 2px 7px; border-radius: 999px; background: var(--rose-soft); color: var(--rose);
     }
     .anomaly-card.medium .score-tag { background: var(--amber-soft); color: #b45309; }
     .anomaly-card.ml .score-tag { background: var(--violet-soft); color: var(--violet); }
     .anomaly-card-summary {
-      font-size: 12px; line-height: 1.48; color: #475569;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 9px;
+      font-size: 11.5px; line-height: 1.45; color: #475569;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px;
     }
     .anomaly-card-foot { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--muted); }
     .inspect-link { color: var(--primary); font-weight: 600; }
 
-    /* Bottom Split: Phase 2 Intelligence Tabs + Engine Parameters */
-    .split-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 20px; align-items: start; }
+    /* Bottom Intelligence Tabs + Controls */
+    .split-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; align-items: start; }
     @media (max-width: 1020px) { .split-grid { grid-template-columns: 1fr; } }
 
-    .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-bar { display: flex; gap: 5px; flex-wrap: wrap; }
     .tab-btn {
       border: 1px solid transparent; background: transparent; color: var(--muted);
-      font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 9px; cursor: pointer;
-      transition: all 0.2s var(--ease);
+      font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px; cursor: pointer;
     }
     .tab-btn:hover { background: var(--surface-soft); color: var(--text); }
     .tab-btn.active { background: var(--primary-soft); color: var(--primary); border-color: #bfdbfe; }
 
-    .tab-pane { display: none; padding: 16px 20px; min-height: 300px; }
-    .tab-pane.active { display: block; animation: fadeIn 0.25s var(--ease); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-pane { display: none; padding: 15px 18px; min-height: 295px; }
+    .tab-pane.active { display: block; }
 
-    .feed-list { max-height: 290px; overflow-y: auto; }
+    .feed-list { max-height: 280px; overflow-y: auto; }
     .feed-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 9px 12px; border-radius: 10px; font-size: 12.5px; border-bottom: 1px solid #f1f5f9;
-      animation: slideInRow 0.3s var(--ease);
+      padding: 8px 11px; border-radius: 9px; font-size: 12px; border-bottom: 1px solid #f1f5f9;
     }
     .feed-row.flagged { background: var(--rose-soft); border-bottom-color: #ffe4e6; }
-    @keyframes slideInRow { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-    .mono { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
 
-    /* Forensics, Analytics & Partitioning Sub-grids */
     .mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     @media (max-width: 720px) { .mini-grid { grid-template-columns: 1fr; } }
 
-    .sub-box {
-      border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: #fcfdff;
-    }
-    .sub-box h3 { font-size: 12.5px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .sub-box { border: 1px solid var(--border); border-radius: 11px; padding: 11px 13px; background: #fcfdff; }
+    .sub-box h3 { font-size: 12px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-    .search-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .search-row { display: flex; gap: 8px; margin-bottom: 11px; flex-wrap: wrap; }
     .text-input {
-      flex: 1; min-width: 190px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
-      font-family: 'JetBrains Mono', monospace; font-size: 12px; outline: none; transition: border-color 0.2s;
+      flex: 1; min-width: 180px; padding: 7px 11px; border-radius: 9px; border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px; outline: none;
     }
     .text-input:focus { border-color: var(--primary); }
 
     .cypher-box {
-      margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #0f172a; color: #e2e8f0;
-      font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap;
+      margin-top: 11px; padding: 9px 11px; border-radius: 9px; background: #0f172a; color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.45; overflow-x: auto; white-space: pre-wrap;
     }
 
-    .bar-row { margin-bottom: 8px; }
-    .bar-head { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px; }
+    .bar-row { margin-bottom: 7px; }
+    .bar-head { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
     .bar-track { height: 7px; border-radius: 999px; background: var(--surface-soft); overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--sky)); transition: width 0.4s var(--ease); }
+    .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), var(--sky)); }
     .bar-fill.danger { background: linear-gradient(90deg, var(--amber), var(--rose)); }
     .bar-fill.violet { background: linear-gradient(90deg, var(--violet), #a855f7); }
+    .bar-fill.emerald { background: linear-gradient(90deg, #10b981, #0ea5e9); }
 
-    /* Settings Sliders */
-    .settings-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 15px; }
-    .slider-row label { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 5px; }
+    .settings-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+    .slider-row label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
     input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
 
-    /* Pop-Up Modal */
+    /* Modal & Drawer */
     .popup-backdrop {
-      position: fixed; inset: 0; z-index: 90; background: rgba(15, 23, 42, 0.25); backdrop-filter: blur(4px);
-      display: grid; place-items: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.28s var(--ease);
+      position: fixed; inset: 0; z-index: 90; background: rgba(15, 23, 42, 0.25);
+      display: grid; place-items: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
     }
     .popup-backdrop.show { opacity: 1; pointer-events: auto; }
     .popup-card {
-      width: 100%; max-width: 540px; background: var(--surface); border: 1px solid #fecdd3; border-radius: 20px;
-      box-shadow: var(--shadow-lg); overflow: hidden; transform: translateY(20px) scale(0.96); transition: transform 0.36s var(--ease);
+      width: 100%; max-width: 530px; background: var(--surface); border: 1px solid #fecdd3; border-radius: 18px;
+      box-shadow: var(--shadow-lg); overflow: hidden;
     }
-    .popup-backdrop.show .popup-card { transform: translateY(0) scale(1); }
     .popup-header {
-      background: linear-gradient(135deg, #fff1f2, #ffffff); padding: 15px 22px; border-bottom: 1px solid #ffe4e6;
+      background: linear-gradient(135deg, #fff1f2, #ffffff); padding: 14px 20px; border-bottom: 1px solid #ffe4e6;
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
     }
-    .severity-pill {
-      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: var(--rose); color: #fff;
-    }
+    .severity-pill { padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; background: var(--rose); color: #fff; }
     .severity-pill.medium { background: var(--amber); }
-    .popup-body { padding: 18px 22px; display: flex; flex-direction: column; gap: 13px; max-height: 70vh; overflow-y: auto; }
-    .popup-title { font-size: 18px; font-weight: 700; }
-    .popup-summary { font-size: 13.5px; line-height: 1.55; color: #334155; }
+    .popup-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow-y: auto; }
+    .popup-title { font-size: 17px; font-weight: 700; }
+    .popup-summary { font-size: 13px; line-height: 1.5; color: #334155; }
     .popup-explain {
-      font-size: 12.5px; line-height: 1.55; color: var(--muted); background: var(--surface-soft);
-      padding: 11px 14px; border-radius: 12px; border-left: 3px solid var(--primary);
+      font-size: 12px; line-height: 1.5; color: var(--muted); background: var(--surface-soft);
+      padding: 10px 13px; border-radius: 10px; border-left: 3px solid var(--primary);
     }
     .metric-chips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .metric-chip { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; background: #fff; }
-    .metric-chip span { display: block; font-size: 11px; color: var(--muted); }
-    .metric-chip strong { font-size: 13.5px; }
+    .metric-chip { border: 1px solid var(--border); border-radius: 9px; padding: 8px 11px; background: #fff; }
+    .metric-chip span { display: block; font-size: 10.5px; color: var(--muted); }
+    .metric-chip strong { font-size: 13px; }
     .popup-footer {
-      padding: 14px 22px; background: #f8fafc; border-top: 1px solid var(--border);
+      padding: 13px 20px; background: #f8fafc; border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     }
 
-    /* Inbox Drawer */
-    .drawer-overlay {
-      position: fixed; inset: 0; z-index: 80; background: rgba(15, 23, 42, 0.2); opacity: 0; pointer-events: none; transition: opacity 0.3s var(--ease);
-    }
+    .drawer-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(15, 23, 42, 0.2); opacity: 0; pointer-events: none; transition: opacity 0.25s; }
     .drawer-overlay.open { opacity: 1; pointer-events: auto; }
     .inbox-drawer {
-      position: fixed; top: 0; right: 0; height: 100vh; width: 430px; max-width: 92vw; z-index: 85;
+      position: fixed; top: 0; right: 0; height: 100vh; width: 420px; max-width: 92vw; z-index: 85;
       background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-lg);
-      display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.4s var(--ease);
+      display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s ease;
     }
     .inbox-drawer.open { transform: translateX(0); }
-    .inbox-list { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
-    .inbox-item { border: 1px solid var(--border); border-radius: 14px; padding: 13px; background: #fff; }
-    .inbox-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .inbox-type { font-size: 13px; font-weight: 700; color: var(--rose); }
-    .inbox-time { font-size: 11px; color: var(--muted); }
-    .inbox-desc { font-size: 12.5px; color: #334155; line-height: 1.5; margin-bottom: 10px; }
+    .inbox-list { flex: 1; overflow-y: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 10px; }
+    .inbox-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: #fff; }
+    .inbox-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .inbox-type { font-size: 12.5px; font-weight: 700; color: var(--rose); }
+    .inbox-time { font-size: 10.5px; color: var(--muted); }
+    .inbox-desc { font-size: 12px; color: #334155; line-height: 1.45; margin-bottom: 9px; }
 
-    .empty-state { text-align: center; padding: 36px 18px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+    .empty-state { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 12px; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -535,18 +347,27 @@
     <div class="brand">
       <div class="brand-mark">AN</div>
       <div>
-        <h1>ARCNET <span class="phase-tag">Phase 2</span></h1>
-        <p>Dynamic Graph Forensics · Louvain &amp; PageRank · Online ML · Partitioning</p>
+        <h1>ARCNET <span class="phase-tag">Stage 3 &amp; 4 · 60 FPS</span></h1>
+        <p id="domainSubtitle">Multi-Domain Dynamic Graph · Incremental Benchmarks · Community Evolution</p>
       </div>
     </div>
 
     <div class="top-actions">
+      <!-- 5-Source Unified Selector -->
+      <select id="sourceSelect" class="source-select" onchange="switchDataSource(this.value)" title="Switch Live Graph Domain">
+        <option value="blockchain">1. Blockchain.com (BTC)</option>
+        <option value="ripe_bgp">2. RIPE RIS Live (BGP)</option>
+        <option value="wikimedia">3. Wikimedia (enwiki)</option>
+        <option value="bluesky">4. Bluesky Jetstream</option>
+        <option value="gdelt">5. GDELT 2.0 Knowledge Graph</option>
+      </select>
+
       <div id="statusPill" class="status-pill">
         <span class="pulse-dot"></span>
-        <span id="statusText">Connecting to Blockchain.com...</span>
+        <span id="statusText">Connecting...</span>
       </div>
 
-      <div class="segmented" title="Switch between Live Mainnet and Time-Travel Replay">
+      <div class="segmented" title="Live Stream vs Time-Travel Replay">
         <button id="modeLiveBtn" class="seg-btn active" onclick="setStreamMode('live', 1)">Live</button>
         <button id="modeReplay1Btn" class="seg-btn" onclick="setStreamMode('replay', 1)">Replay 1x</button>
         <button id="modeReplay3Btn" class="seg-btn" onclick="setStreamMode('replay', 3)">3x</button>
@@ -564,19 +385,19 @@
     <!-- KPI Row -->
     <section class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Active Wallets (Nodes)</div>
+        <div id="kpiNodesLabel" class="kpi-label">Active Wallets (Nodes)</div>
         <div id="kpiNodes" class="kpi-value accent">0</div>
         <div id="kpiCommunities" class="kpi-sub">0 Louvain clusters · Q = 0.00</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Live Transfers (Edges)</div>
+        <div id="kpiEdgesLabel" class="kpi-label">Live Transfers (Edges)</div>
         <div id="kpiEdges" class="kpi-value">0</div>
-        <div id="kpiRateSub" class="kpi-sub">0.0 tx/s · 0 components</div>
+        <div id="kpiRateSub" class="kpi-sub">0.0/s · 0 components</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Online ML &amp; Storage</div>
-        <div id="kpiMLStatus" class="kpi-value violet">Warming</div>
-        <div id="kpiStorageSub" class="kpi-sub">Storage: In-Memory Mirror</div>
+        <div class="kpi-label">Incremental Speedup</div>
+        <div id="kpiSpeedup" class="kpi-value violet">1.0x</div>
+        <div id="kpiSpeedupSub" class="kpi-sub">Inc: 0.00 ms vs Full: 0.00 ms</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Flagged Anomalies</div>
@@ -585,15 +406,15 @@
       </div>
     </section>
 
-    <!-- Main Workspace: Active Graph (Left) + Live Anomalies Side Panel (Right) -->
+    <!-- Main Workspace: 60 FPS Active Graph + Live Anomalies Side Panel -->
     <section class="workspace-grid">
       <div class="card">
         <div class="card-header">
           <div class="card-title-group">
-            <h2>Active Real-Time Network Graph</h2>
-            <p>Switch color layers between Risk/Taint, Louvain Communities, and Partition Shards.</p>
+            <h2>60 FPS Dynamic Network Canvas</h2>
+            <p>Local radial placement + zero auto-jitter · Click "Arrange Layout" anytime for force-directed polish.</p>
           </div>
-          <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <div class="segmented">
               <button id="viewRiskBtn" class="seg-btn active" onclick="setGraphViewMode('risk')">Risk &amp; Taint</button>
               <button id="viewCommBtn" class="seg-btn" onclick="setGraphViewMode('community')">Communities</button>
@@ -610,14 +431,13 @@
           <div class="graph-inner">
             <div class="graph-toolbar">
               <div id="graphLegend" class="legend">
-                <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
+                <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Entity</div>
                 <div class="legend-item"><span class="dot" style="background:#f59e0b"></span> PageRank Tainted</div>
                 <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Seed</div>
               </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <div style="display:flex; gap:7px; flex-wrap:wrap;">
                 <button id="resumeToolbarBtn" class="btn btn-live" style="display:none;" onclick="resumeLiveGraph()">↺ Back to Live Graph</button>
-                <button id="pauseBtn" class="btn" onclick="togglePauseLayout()">Pause Layout</button>
-                <button class="btn" onclick="runSmoothLayout(true)">Re-Layout</button>
+                <button class="btn" onclick="runOneShotLayout()">Arrange Layout</button>
                 <button class="btn" onclick="fitGraph()">Fit View</button>
               </div>
             </div>
@@ -629,16 +449,16 @@
                   <strong id="focusTargetLabel">Inspecting anomaly node</strong>
                   <span id="focusBufferText">Live updates held while inspecting</span>
                 </div>
-                <button class="btn btn-live" style="padding:7px 13px; font-size:12px;" onclick="resumeLiveGraph()">Back to Live Graph</button>
+                <button class="btn btn-live" style="padding:6px 12px; font-size:12px;" onclick="resumeLiveGraph()">Back to Live Graph</button>
               </div>
 
               <div id="cy"></div>
 
-              <!-- Enhanced Phase 2 Node Inspector -->
+              <!-- Entity Telemetry Inspector -->
               <div id="nodeInspector" class="node-inspector">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <strong style="font-size:13px;">Wallet Telemetry Inspector</strong>
-                  <button class="btn" style="padding:2px 8px; font-size:11px;" onclick="closeInspector()">✕</button>
+                  <strong style="font-size:12.5px;">Entity Telemetry Inspector</strong>
+                  <button class="btn" style="padding:2px 7px; font-size:11px;" onclick="closeInspector()">✕</button>
                 </div>
                 <div id="inspAddr" class="inspector-addr"></div>
                 <div class="inspector-grid">
@@ -646,11 +466,11 @@
                   <div class="inspector-stat"><span>Risk Taint (PPR)</span><strong id="inspTaint">0%</strong></div>
                   <div class="inspector-stat"><span>ML Risk Score</span><strong id="inspML">0 / 100</strong></div>
                   <div class="inspector-stat"><span>Cluster / Shard</span><strong id="inspCluster">C0 · P0</strong></div>
-                  <div class="inspector-stat"><span>Total In (BTC)</span><strong id="inspIn">0</strong></div>
-                  <div class="inspector-stat"><span>Total Out (BTC)</span><strong id="inspOut">0</strong></div>
+                  <div class="inspector-stat"><span>Total In Weight</span><strong id="inspIn">0</strong></div>
+                  <div class="inspector-stat"><span>Total Out Weight</span><strong id="inspOut">0</strong></div>
                 </div>
-                <button class="btn btn-soft" style="width:100%; justify-content:center; padding:6px 10px; font-size:12px;" onclick="inspectNodeInForensics()">
-                  Trace Wallet in Neo4j Forensics →
+                <button class="btn btn-soft" style="width:100%; justify-content:center; padding:6px 10px; font-size:11.5px;" onclick="inspectNodeInForensics()">
+                  Trace Entity in Neo4j Forensics →
                 </button>
               </div>
             </div>
@@ -668,105 +488,117 @@
         </div>
         <div id="anomalySideList" class="anomaly-panel-list">
           <div class="empty-state">
-            Monitoring evolving Bitcoin network...<br />
-            Rule &amp; ML anomalies will stream here automatically.
+            Monitoring live network stream...<br />
+            Rule &amp; ML anomalies will appear here automatically.
           </div>
         </div>
       </aside>
     </section>
 
-    <!-- Bottom Row: Phase 2 Intelligence Tabs (Left) + Engine Controls (Right) -->
+    <!-- Bottom Row: LSGA & Phase 2 Intelligence Tabs (Left) + Engine Sliders (Right) -->
     <section class="split-grid">
       <div class="card">
         <div class="card-header">
           <div class="tab-bar">
             <button id="tabBtnStream" class="tab-btn active" onclick="switchIntelTab('stream')">Live Stream</button>
+            <button id="tabBtnBench" class="tab-btn" onclick="switchIntelTab('bench')">Inc vs Full Benchmark</button>
+            <button id="tabBtnAnalytics" class="tab-btn" onclick="switchIntelTab('analytics')">Communities &amp; ML</button>
             <button id="tabBtnForensics" class="tab-btn" onclick="switchIntelTab('forensics')">Neo4j Forensics</button>
-            <button id="tabBtnAnalytics" class="tab-btn" onclick="switchIntelTab('analytics')">Analytics &amp; ML</button>
             <button id="tabBtnPartition" class="tab-btn" onclick="switchIntelTab('partition')">Partitioning</button>
           </div>
-          <span id="intelHint" class="mono" style="color:var(--muted);">Phase 2 Modules</span>
+          <span id="storageBadge" class="mono" style="color:var(--muted);">Mirror Active</span>
         </div>
 
-        <!-- Tab 1: Live Transaction Stream -->
+        <!-- Tab 1: Live Stream -->
         <div id="tabStream" class="tab-pane active">
           <div id="txFeed" class="feed-list">
-            <div class="empty-state">Waiting for live Bitcoin transactions...</div>
+            <div class="empty-state">Waiting for live stream events...</div>
           </div>
         </div>
 
-        <!-- Tab 2: Milestone 1 Neo4j & Cypher Forensics -->
-        <div id="tabForensics" class="tab-pane">
-          <div class="search-row">
-            <input id="forensicWalletInput" class="text-input" placeholder="Search wallet address (or leave empty to scan Peel Chains & Wash Loops)..." />
-            <button class="btn btn-primary" onclick="runForensicScan()">Run Cypher Scan</button>
+        <!-- Tab 2: Incremental vs. Full Graph Benchmark (LSGA.txt #1) -->
+        <div id="tabBench" class="tab-pane">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:12.5px; font-weight:600; color:var(--text);">
+              Incremental Neighbourhood Update O(Δ) vs. Full Graph Recalculation O(V+E)
+            </span>
+            <span id="benchSummaryBadge" class="mono" style="color:var(--violet); font-weight:700;">Speedup: 1.0x</span>
           </div>
+          <canvas id="benchChart" width="640" height="175" style="width:100%; height:175px; border:1px solid var(--border); border-radius:11px; background:#fcfdff;"></canvas>
+          <div id="benchTable" style="margin-top:10px; font-size:11.5px; color:var(--muted);">
+            Collecting runtime latency samples as active graph scales...
+          </div>
+        </div>
 
-          <div id="walletHistoryBox" class="sub-box" style="display:none; margin-bottom:12px;"></div>
-
+        <!-- Tab 3: Community Evolution + PageRank Taint + Online ML (LSGA.txt #2 + Module 5 & 8) -->
+        <div id="tabAnalytics" class="tab-pane">
           <div class="mini-grid">
             <div class="sub-box">
-              <h3>Peel Chains (3–4 Hops) <span id="peelCountBadge" class="mono" style="color:var(--violet);">0</span></h3>
-              <div id="peelChainsList" style="font-size:12px; color:var(--muted);">Click "Run Cypher Scan" or "+ Peel Chain" to detect multi-hop peel forwarding.</div>
+              <h3>Louvain Community Evolution <span id="modularityBadge" class="mono" style="color:var(--primary);">Q = 0.00</span></h3>
+              <div id="evolutionList" style="font-size:11.5px; color:var(--muted);">Tracking cluster splits, merges &amp; modularity shifts over time...</div>
             </div>
             <div class="sub-box">
-              <h3>Circular Wash Loops <span id="loopCountBadge" class="mono" style="color:var(--rose);">0</span></h3>
-              <div id="washLoopsList" style="font-size:12px; color:var(--muted);">Detects cyclic fund returns (3–5 hops) via Cypher path traversal.</div>
+              <h3>Online Isolation Forest (8D ML) <span id="mlBufferBadge" class="mono" style="color:var(--violet);">0 samples</span></h3>
+              <div id="mlTopList" style="font-size:11.5px; color:var(--muted);">Collecting structural node embeddings...</div>
             </div>
           </div>
+          <div class="sub-box" style="margin-top:11px;">
+            <h3>PageRank Risk Taint Diffusion</h3>
+            <div id="taintedList" style="font-size:11.5px; color:var(--muted);">Waiting for anomaly seeds to diffuse taint...</div>
+          </div>
+        </div>
 
+        <!-- Tab 4: Neo4j & Cypher Forensics -->
+        <div id="tabForensics" class="tab-pane">
+          <div class="search-row">
+            <input id="forensicWalletInput" class="text-input" placeholder="Search entity ID / address (or leave empty to scan Peel Chains & Loops)..." />
+            <button class="btn btn-primary" onclick="runForensicScan()">Run Cypher Scan</button>
+          </div>
+          <div id="walletHistoryBox" class="sub-box" style="display:none; margin-bottom:10px;"></div>
+          <div class="mini-grid">
+            <div class="sub-box">
+              <h3>Peel / Propagation Chains <span id="peelCountBadge" class="mono" style="color:var(--violet);">0</span></h3>
+              <div id="peelChainsList" style="font-size:11.5px; color:var(--muted);">Click "Run Cypher Scan" or "+ Peel Chain".</div>
+            </div>
+            <div class="sub-box">
+              <h3>Circular Loops <span id="loopCountBadge" class="mono" style="color:var(--rose);">0</span></h3>
+              <div id="washLoopsList" style="font-size:11.5px; color:var(--muted);">Detects 3–5 hop cyclic flows.</div>
+            </div>
+          </div>
           <div id="cypherPreview" class="cypher-box">MATCH p = (a:Wallet)-[r1:SENT]->(b:Wallet)-[r2:SENT]->(c:Wallet)-[r3:SENT]->(d:Wallet)
 WHERE r1.timestamp &lt;= r2.timestamp AND r2.timestamp &lt;= r3.timestamp
 RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS amounts LIMIT 8</div>
         </div>
 
-        <!-- Tab 3: Milestone 2 & 3 Analytics + Online ML -->
-        <div id="tabAnalytics" class="tab-pane">
-          <div class="mini-grid">
-            <div class="sub-box">
-              <h3>PageRank Risk Taint Diffusion <span id="modularityBadge" class="mono" style="color:var(--primary);">Q = 0.00</span></h3>
-              <div id="taintedList" style="font-size:12px; color:var(--muted);">Waiting for anomaly seeds to diffuse taint...</div>
-            </div>
-            <div class="sub-box">
-              <h3>Online Isolation Forest (8D ML) <span id="mlBufferBadge" class="mono" style="color:var(--violet);">0 samples</span></h3>
-              <div id="mlTopList" style="font-size:12px; color:var(--muted);">Collecting structural node embeddings...</div>
-            </div>
-          </div>
-          <div class="sub-box" style="margin-top:12px;">
-            <h3>Betweenness Centrality Bridge Wallets</h3>
-            <div id="bridgesList" style="font-size:12px; color:var(--muted);">Identifying cross-community broker hubs...</div>
-          </div>
-        </div>
-
-        <!-- Tab 4: Milestone 4 Graph Partitioning (Edge-Cut vs Vertex-Cut) -->
+        <!-- Tab 5: Partitioning & Processing-Cost Comparison (LSGA.txt #3 + Module 3) -->
         <div id="tabPartition" class="tab-pane">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
-            <span id="partRecommendation" style="font-size:12.5px; font-weight:600; color:var(--primary);">
-              Comparing LDG Edge-Cut vs. PowerGraph Vertex-Cut on active graph...
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; gap:10px; flex-wrap:wrap;">
+            <span id="partRecommendation" style="font-size:12px; font-weight:600; color:var(--primary);">
+              Comparing LDG Edge-Cut vs. PowerGraph Vertex-Cut processing costs...
             </span>
-            <button class="btn btn-soft" style="padding:5px 11px; font-size:12px;" onclick="refreshPartitionReport()">Recompute Shards</button>
+            <button class="btn btn-soft" style="padding:5px 10px; font-size:11.5px;" onclick="refreshPartitionReport()">Recompute Shards</button>
           </div>
           <div class="mini-grid">
             <div class="sub-box">
               <h3>Edge-Cut (LDG) <span id="ecCutBadge" class="mono" style="color:var(--rose);">0% cut</span></h3>
-              <div id="ecMetrics" style="font-size:12px; color:var(--muted); margin-bottom:8px;">Cut edges: 0 · Balance: 1.0x</div>
+              <div id="ecMetrics" style="font-size:11.5px; color:var(--muted); margin-bottom:7px;">Comm cost: 0 msgs · Balance: 1.0x</div>
               <div id="ecBars"></div>
             </div>
             <div class="sub-box">
               <h3>Vertex-Cut (PowerGraph) <span id="vcRfBadge" class="mono" style="color:var(--emerald);">RF 1.00</span></h3>
-              <div id="vcMetrics" style="font-size:12px; color:var(--muted); margin-bottom:8px;">Mirrored hubs: 0 · Balance: 1.0x</div>
+              <div id="vcMetrics" style="font-size:11.5px; color:var(--muted); margin-bottom:7px;">Sync cost: 0 ops · Balance: 1.0x</div>
               <div id="vcBars"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: Dynamic Engine Parameters -->
+      <!-- Right: Dynamic Engine Sliders -->
       <div class="card">
         <div class="card-header">
           <div class="card-title-group">
             <h2>Dynamic Engine Parameters</h2>
-            <p>Live thresholds synced immediately to backend &amp; client</p>
+            <p>Live thresholds synced immediately</p>
           </div>
         </div>
         <div class="settings-body">
@@ -775,7 +607,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
             <input id="winSlider" type="range" min="60" max="420" step="30" value="180" oninput="handleSliderChange(false)" onchange="handleSliderChange(true)" />
           </div>
           <div class="slider-row">
-            <label><span>Whale Alert Threshold</span><span id="whaleVal" class="mono">2.0 BTC</span></label>
+            <label><span id="weightSliderLabel">Magnitude Alert Threshold</span><span id="whaleVal" class="mono">2.0 BTC</span></label>
             <input id="whaleSlider" type="range" min="0.5" max="25" step="0.5" value="2" oninput="handleSliderChange(false)" onchange="handleSliderChange(true)" />
           </div>
           <div class="slider-row">
@@ -791,7 +623,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
     </section>
   </main>
 
-  <!-- On-Click Anomaly Details Modal (with ML Feature Attribution) -->
+  <!-- On-Click Anomaly Details Modal -->
   <div id="popupBackdrop" class="popup-backdrop" onclick="handleBackdropClick(event)">
     <div class="popup-card">
       <div class="popup-header">
@@ -824,7 +656,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
     <div class="card-header">
       <div class="card-title-group">
         <h2>Anomaly Inbox</h2>
-        <p>Inspected &amp; Neo4j-persisted alerts</p>
+        <p>Inspected &amp; archived alerts</p>
       </div>
       <button class="btn" onclick="toggleInbox(false)">Close</button>
     </div>
@@ -835,59 +667,71 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
 
   <script>
     const CLUSTER_PALETTE = ['#2563eb', '#0ea5e9', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1'];
+    const SOURCE_META = {
+      blockchain: { label: 'Blockchain.com (BTC)', unit: 'BTC', nodes: 'Active Wallets (Nodes)', edges: 'Live Transfers (Edges)' },
+      ripe_bgp:   { label: 'RIPE RIS Live (BGP)', unit: 'Prefixes', nodes: 'Autonomous Systems (Nodes)', edges: 'BGP Routing Paths (Edges)' },
+      wikimedia:  { label: 'Wikimedia (enwiki)', unit: 'KB Δ', nodes: 'Editors & Pages (Nodes)', edges: 'Live Edits (Edges)' },
+      bluesky:    { label: 'Bluesky Jetstream', unit: 'Interactions', nodes: 'Accounts (Nodes)', edges: 'Replies & Mentions (Edges)' },
+      gdelt:      { label: 'GDELT 2.0 Knowledge Graph', unit: 'Mentions', nodes: 'Entities & Orgs (Nodes)', edges: 'Co-Occurrences (Edges)' }
+    };
 
     let cy = null;
     let socket = null;
-    let blockchainRelayWs = null;
+    let relayWs = null;
     let relayPingTimer = null;
     let relayFallbackTimer = null;
     let backendConnectTimer = null;
     let configPushTimer = null;
     let lastNormalRelayAt = 0;
 
+    let activeSource = 'blockchain';
     let backendConnected = false;
     let clientMode = false;
     let feedIsLive = false;
     let currentStreamMode = 'live';
-    let currentViewMode = 'risk'; // 'risk' | 'community' | 'partition'
+    let currentViewMode = 'risk';
 
     let graphOpen = true;
-    let layoutPaused = false;
     let graphFrozen = false;
     let pausedUpdatesCount = 0;
-    let lastLayoutTime = 0;
+    let placementAngle = 0;
 
     let unreadAlerts = [];
     let inboxItems = [];
     let selectedAlert = null;
     let currentInspectedAddress = '';
+    let benchmarkPoints = [];
 
-    // Client-side fallback graph state (used only if backend WS cannot connect)
+    // 60 FPS Render Micro-Batch Queue (prevents DOM thrashing during bursts)
+    let pendingNodeUpserts = new Map();
+    let pendingEdgeUpserts = new Map();
+    let pendingNodeRemovals = new Set();
+    let pendingEdgeRemovals = new Set();
+    let renderScheduled = false;
+
     const clientGraph = {
       nodes: new Map(),
       edges: new Map(),
       txTimes: [],
-      cooldowns: new Map(),
       windowSeconds: 180,
       whaleBtcThreshold: 2.0,
       mlScoreThreshold: 74,
       partitionCount: 4,
       fanoutThreshold: 6,
-      faninThreshold: 5,
       maxNodes: 115
     };
 
     function escapeHtml(str) {
       return String(str ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     function shortAddr(addr) {
-      if (!addr || addr.length <= 12) return addr || 'unknown';
-      return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+      if (!addr) return 'unknown';
+      if (/^(AS|Editor:|Page:|bsky:|Org:|Person:|Loc:)/.test(addr)) {
+        return addr.length <= 24 ? addr : addr.slice(0, 22) + '…';
+      }
+      return addr.length <= 12 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     }
 
     function sendCommand(payload) {
@@ -898,7 +742,6 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       return false;
     }
 
-    // Live Slider Config (DOM Source of Truth)
     function getLiveSliderConfig() {
       const win = parseInt(document.getElementById('winSlider')?.value || '180', 10);
       const whale = parseFloat(document.getElementById('whaleSlider')?.value || '2.0');
@@ -918,8 +761,9 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
 
     function handleSliderChange(immediate = false) {
       const cfg = getLiveSliderConfig();
+      const unit = (SOURCE_META[activeSource] || SOURCE_META.blockchain).unit;
       document.getElementById('winVal').textContent = `${cfg.window_seconds} sec`;
-      document.getElementById('whaleVal').textContent = `${cfg.whale_btc_threshold.toFixed(1)} BTC`;
+      document.getElementById('whaleVal').textContent = `${cfg.whale_btc_threshold.toFixed(1)} ${unit}`;
       document.getElementById('mlVal').textContent = `${Math.round(cfg.ml_score_threshold)} / 100`;
       document.getElementById('partVal').textContent = `${cfg.partition_count} shards`;
 
@@ -943,49 +787,22 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       }
     }
 
-    function syncAllCounters(bumpSide = false, bumpInbox = false) {
+    function syncAllCounters() {
       const unreadCount = unreadAlerts.length;
       const archivedCount = inboxItems.length;
-      const totalFlagged = unreadCount + archivedCount;
-
-      const kpiEl = document.getElementById('kpiAnomalies');
-      kpiEl.textContent = totalFlagged;
-      if (bumpSide) {
-        kpiEl.classList.add('bump');
-        setTimeout(() => kpiEl.classList.remove('bump'), 300);
-      }
+      document.getElementById('kpiAnomalies').textContent = unreadCount + archivedCount;
       document.getElementById('kpiInboxSummary').textContent = `${unreadCount} unread · ${archivedCount} in Inbox`;
-
-      const sideBadge = document.getElementById('sidePanelBadge');
-      sideBadge.textContent = unreadCount;
-      if (bumpSide) {
-        sideBadge.classList.add('bump');
-        setTimeout(() => sideBadge.classList.remove('bump'), 350);
-      }
-
-      const inboxBadge = document.getElementById('inboxBadge');
-      inboxBadge.textContent = archivedCount;
-      if (bumpInbox) {
-        inboxBadge.classList.add('bump');
-        setTimeout(() => inboxBadge.classList.remove('bump'), 350);
-      }
+      document.getElementById('sidePanelBadge').textContent = unreadCount;
+      document.getElementById('inboxBadge').textContent = archivedCount;
     }
 
-    // 1. Cytoscape Interactive Graph with Phase 2 Dynamic Color Modes
+    // 1. 60 FPS Cytoscape Setup (Haystack edges + zero continuous physics jitter)
     function computeNodeColor(ele) {
       const d = ele.data();
-      if (currentViewMode === 'community') {
-        const cid = Number(d.community_id || 0);
-        return CLUSTER_PALETTE[cid % CLUSTER_PALETTE.length];
-      }
-      if (currentViewMode === 'partition') {
-        const pid = Number(d.partition_id || 0);
-        return CLUSTER_PALETTE[pid % CLUSTER_PALETTE.length];
-      }
-      // Risk & PageRank Taint Mode
+      if (currentViewMode === 'community') return CLUSTER_PALETTE[Number(d.community_id || 0) % CLUSTER_PALETTE.length];
+      if (currentViewMode === 'partition') return CLUSTER_PALETTE[Number(d.partition_id || 0) % CLUSTER_PALETTE.length];
       if (d.is_anomaly) return '#f43f5e';
-      const taint = Number(d.risk_taint || 0);
-      if (taint >= 35) return '#f59e0b';
+      if (Number(d.risk_taint || 0) >= 35) return '#f59e0b';
       if (Number(d.degree || 0) >= 4) return '#0ea5e9';
       return '#2563eb';
     }
@@ -994,6 +811,8 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       cy = cytoscape({
         container: document.getElementById('cy'),
         elements: [],
+        textureOnViewport: true,
+        hideEdgesOnViewport: false,
         style: [
           {
             selector: 'node',
@@ -1006,11 +825,9 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
               'font-family': 'JetBrains Mono, monospace',
               'color': '#334155',
               'text-valign': 'bottom',
-              'text-margin-y': 5,
-              'width': 'mapData(degree, 1, 12, 18, 38)',
-              'height': 'mapData(degree, 1, 12, 18, 38)',
-              'transition-property': 'background-color, width, height, border-color, opacity',
-              'transition-duration': '0.35s'
+              'text-margin-y': 4,
+              'width': 'mapData(degree, 1, 12, 18, 36)',
+              'height': 'mapData(degree, 1, 12, 18, 36)'
             }
           },
           {
@@ -1024,40 +841,163 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
               'z-index': 99
             }
           },
-          { selector: '.dimmed', style: { 'opacity': 0.2 } },
+          { selector: '.dimmed', style: { 'opacity': 0.18 } },
           {
             selector: 'edge',
             style: {
-              'width': 'mapData(weight, 0, 5, 1.5, 4.5)',
+              'width': 'mapData(weight, 0, 5, 1.4, 3.8)',
               'line-color': '#cbd5e1',
               'target-arrow-color': '#94a3b8',
               'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier',
-              'arrow-scale': 0.85,
-              'opacity': 0.85,
-              'transition-property': 'line-color, width, opacity',
-              'transition-duration': '0.3s'
+              'curve-style': 'haystack', // GPU-fast straight edges (eliminates bezier lag)
+              'arrow-scale': 0.8,
+              'opacity': 0.82
             }
-          },
-          {
-            selector: 'edge.fresh',
-            style: { 'line-color': '#3b82f6', 'target-arrow-color': '#2563eb', 'width': 3 }
           },
           { selector: 'node:selected', style: { 'border-width': 4, 'border-color': '#0f172a' } }
         ],
-        layout: { name: 'cose', animate: true }
+        layout: { name: 'preset' }
       });
 
       cy.on('tap', 'node', (evt) => showNodeInspector(evt.target.data()));
       cy.on('tap', (evt) => { if (evt.target === cy) closeInspector(); });
+    }
 
-      setInterval(() => {
-        if (!cy || !graphOpen || currentViewMode !== 'risk') return;
-        const flagged = cy.nodes('[?is_anomaly]');
-        if (flagged.length === 0) return;
-        flagged.animate({ style: { 'border-width': 8 } }, { duration: 450 })
-               .animate({ style: { 'border-width': 3 } }, { duration: 450 });
-      }, 1500);
+    // Incremental Radial Placement: spawns new nodes cleanly near connected neighbors without shaking existing nodes
+    function computeIncrementalPosition(nodeId, neighborHintMap) {
+      const cx = (cy?.width() || 760) / 2;
+      const cyMid = (cy?.height() || 500) / 2;
+      const anchorId = neighborHintMap.get(nodeId);
+      if (anchorId && cy) {
+        const anchorEl = cy.getElementById(anchorId);
+        if (anchorEl.length) {
+          const pos = anchorEl.position();
+          placementAngle += 2.39996; // Golden angle spread prevents overlap
+          const radius = 58 + (placementAngle % 3) * 14;
+          return {
+            x: Math.max(40, Math.min(cx * 2 - 40, pos.x + Math.cos(placementAngle) * radius)),
+            y: Math.max(40, Math.min(cyMid * 2 - 40, pos.y + Math.sin(placementAngle) * radius))
+          };
+        }
+      }
+      placementAngle += 2.39996;
+      const ringRadius = 60 + ((cy?.nodes().length || 0) % 7) * 26;
+      return {
+        x: cx + Math.cos(placementAngle) * ringRadius,
+        y: cyMid + Math.sin(placementAngle) * ringRadius
+      };
+    }
+
+    function queueGraphDiff(nodes, edges, removedNodes = [], removedEdges = []) {
+      if (!cy) return;
+      if (graphFrozen) {
+        pausedUpdatesCount += 1;
+        updateFocusBufferUI();
+        return;
+      }
+
+      removedEdges.forEach((eid) => { pendingEdgeRemovals.add(eid); pendingEdgeUpserts.delete(eid); });
+      removedNodes.forEach((nid) => { pendingNodeRemovals.add(nid); pendingNodeUpserts.delete(nid); });
+      nodes.forEach((n) => { pendingNodeRemovals.delete(n.id); pendingNodeUpserts.set(n.id, n); });
+      edges.forEach((e) => { pendingEdgeRemovals.delete(e.id); pendingEdgeUpserts.set(e.id, e); });
+
+      if (!renderScheduled) {
+        renderScheduled = true;
+        requestAnimationFrame(flushGraphBatch);
+      }
+    }
+
+    function flushGraphBatch() {
+      renderScheduled = false;
+      if (!cy || graphFrozen) return;
+
+      const nodes = [...pendingNodeUpserts.values()];
+      const edges = [...pendingEdgeUpserts.values()];
+      const remNodes = [...pendingNodeRemovals];
+      const remEdges = [...pendingEdgeRemovals];
+
+      pendingNodeUpserts.clear();
+      pendingEdgeUpserts.clear();
+      pendingNodeRemovals.clear();
+      pendingEdgeRemovals.clear();
+
+      // Build quick neighbor hint map so newly added nodes spawn right beside their sender/target
+      const neighborHint = new Map();
+      edges.forEach((e) => {
+        if (!neighborHint.has(e.target)) neighborHint.set(e.target, e.source);
+        if (!neighborHint.has(e.source)) neighborHint.set(e.source, e.target);
+      });
+
+      cy.batch(() => {
+        remEdges.forEach((eid) => { const el = cy.getElementById(eid); if (el.length) el.remove(); });
+        remNodes.forEach((nid) => { const el = cy.getElementById(nid); if (el.length) el.remove(); });
+
+        nodes.forEach((n) => {
+          const existing = cy.getElementById(n.id);
+          if (existing.length) {
+            existing.data(n);
+          } else {
+            cy.add({
+              group: 'nodes',
+              data: n,
+              position: computeIncrementalPosition(n.id, neighborHint)
+            });
+          }
+        });
+
+        edges.forEach((e) => {
+          const existing = cy.getElementById(e.id);
+          if (existing.length) {
+            existing.data(e);
+          } else if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) {
+            cy.add({ group: 'edges', data: e });
+          }
+        });
+      });
+    }
+
+    function runOneShotLayout() {
+      if (!cy || !graphOpen || graphFrozen) return;
+      cy.layout({
+        name: 'cose',
+        animate: true,
+        animationDuration: 350,
+        randomize: false,
+        fit: true,
+        padding: 32,
+        nodeRepulsion: () => 4800,
+        idealEdgeLength: () => 70
+      }).run();
+    }
+
+    function fitGraph() {
+      if (cy) cy.fit(undefined, 32);
+    }
+
+    function replaceGraphFromSnapshot(snapshot) {
+      if (!cy || !snapshot) return;
+      pendingNodeUpserts.clear();
+      pendingEdgeUpserts.clear();
+      pendingNodeRemovals.clear();
+      pendingEdgeRemovals.clear();
+
+      const neighborHint = new Map();
+      (snapshot.edges || []).forEach((e) => {
+        if (!neighborHint.has(e.target)) neighborHint.set(e.target, e.source);
+      });
+
+      cy.batch(() => {
+        cy.elements().remove();
+        (snapshot.nodes || []).forEach((n) => {
+          cy.add({ group: 'nodes', data: n, position: computeIncrementalPosition(n.id, neighborHint) });
+        });
+        (snapshot.edges || []).forEach((e) => {
+          if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) {
+            cy.add({ group: 'edges', data: e });
+          }
+        });
+      });
+      fitGraph();
     }
 
     function setGraphViewMode(mode) {
@@ -1069,24 +1009,281 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       const legend = document.getElementById('graphLegend');
       if (mode === 'risk') {
         legend.innerHTML = `
-          <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Wallet</div>
+          <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Entity</div>
           <div class="legend-item"><span class="dot" style="background:#f59e0b"></span> PageRank Tainted</div>
           <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Seed</div>`;
       } else if (mode === 'community') {
         legend.innerHTML = `
           <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Cluster 0</div>
           <div class="legend-item"><span class="dot" style="background:#10b981"></span> Cluster 2</div>
-          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Cluster 3+ (Louvain Modularity)</div>`;
+          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Cluster 3+ (Louvain)</div>`;
       } else {
         legend.innerHTML = `
           <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Shard 0</div>
           <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Shard 1</div>
           <div class="legend-item"><span class="dot" style="background:#10b981"></span> Shard 2</div>
-          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Shard 3+ (LDG Partitioning)</div>`;
+          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Shard 3+ (LDG)</div>`;
       }
       if (cy) cy.style().update();
     }
 
+    function toggleGraphView() {
+      graphOpen = !graphOpen;
+      document.getElementById('graphShell').classList.toggle('open', graphOpen);
+      document.getElementById('graphSwitch').classList.toggle('active', graphOpen);
+      document.getElementById('graphToggleLabel').textContent = graphOpen ? 'Hide Graph' : 'Show Graph';
+      if (graphOpen && cy) setTimeout(() => { cy.resize(); fitGraph(); }, 250);
+    }
+
+    // 2. Domain Switcher (All 5 Sources)
+    function applyDomainLabels(src) {
+      activeSource = src in SOURCE_META ? src : 'blockchain';
+      const meta = SOURCE_META[activeSource];
+      document.getElementById('sourceSelect').value = activeSource;
+      document.getElementById('kpiNodesLabel').textContent = meta.nodes;
+      document.getElementById('kpiEdgesLabel').textContent = meta.edges;
+      document.getElementById('weightSliderLabel').textContent = `Magnitude Threshold (${meta.unit})`;
+      handleSliderChange(false);
+    }
+
+    function switchDataSource(newSrc) {
+      applyDomainLabels(newSrc);
+      stopBrowserRelay();
+      if (cy) cy.elements().remove();
+      clientGraph.nodes.clear();
+      clientGraph.edges.clear();
+      benchmarkPoints = [];
+      document.getElementById('txFeed').innerHTML = `<div class="empty-state">Switching stream to ${escapeHtml(SOURCE_META[newSrc].label)}...</div>`;
+
+      if (backendConnected && sendCommand({ action: 'switch_source', source: newSrc })) {
+        return;
+      }
+      startBrowserRelayForSource(newSrc);
+    }
+
+    // 3. Incremental vs. Full Graph Benchmark Chart (LSGA.txt #1)
+    function updateBenchmark(point) {
+      if (!point) return;
+      benchmarkPoints.push(point);
+      if (benchmarkPoints.length > 24) benchmarkPoints.shift();
+
+      document.getElementById('kpiSpeedup').textContent = `${point.speedup}x`;
+      document.getElementById('kpiSpeedupSub').textContent = `Inc: ${point.incremental_ms} ms vs Full: ${point.full_ms} ms`;
+      document.getElementById('benchSummaryBadge').textContent =
+        `Latest Speedup: ${point.speedup}x (${point.incremental_ms} ms vs ${point.full_ms} ms)`;
+
+      const tableEl = document.getElementById('benchTable');
+      tableEl.innerHTML = `Active Graph: <strong>${point.nodes} nodes / ${point.edges} edges</strong> · Touched per event: <strong>${point.touched} nodes</strong> · Incremental O(Δ): <strong>${point.incremental_ms} ms</strong> · Full Pass O(V+E): <strong>${point.full_ms} ms</strong>`;
+
+      drawBenchmarkChart();
+    }
+
+    function drawBenchmarkChart() {
+      const canvas = document.getElementById('benchChart');
+      if (!canvas || benchmarkPoints.length < 2) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const pad = 26;
+      const maxVal = Math.max(0.5, ...benchmarkPoints.map((p) => Math.max(p.full_ms, p.incremental_ms)));
+      const stepX = (w - pad * 2) / Math.max(1, benchmarkPoints.length - 1);
+
+      // Grid lines
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 3; i++) {
+        const y = pad + ((h - pad * 2) / 3) * i;
+        ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w - pad, y); ctx.stroke();
+      }
+
+      const plotLine = (key, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        benchmarkPoints.forEach((p, idx) => {
+          const x = pad + idx * stepX;
+          const y = h - pad - ((p[key] / maxVal) * (h - pad * 2));
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      };
+
+      plotLine('full_ms', '#f43f5e');        // Rose: Full Graph Recalculation O(V+E)
+      plotLine('incremental_ms', '#10b981'); // Emerald: Incremental Update O(Δ)
+
+      ctx.font = '600 11px Inter, sans-serif';
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillText('● Full Graph Pass O(V+E)', pad, 16);
+      ctx.fillStyle = '#10b981';
+      ctx.fillText('● Incremental Update O(Δ)', pad + 165, 16);
+    }
+
+    // 4. Analytics, Community Evolution, Forensics & Partitioning Renderers
+    function renderAnalyticsAndML(analytics, ml) {
+      if (analytics) {
+        document.getElementById('kpiCommunities').textContent =
+          `${analytics.num_communities || 0} Louvain clusters · Q = ${Number(analytics.modularity || 0).toFixed(2)}`;
+        document.getElementById('modularityBadge').textContent = `Q = ${Number(analytics.modularity || 0).toFixed(3)}`;
+
+        const evoEl = document.getElementById('evolutionList');
+        const evo = analytics.evolution_log || [];
+        evoEl.innerHTML = evo.length
+          ? evo.map((ev) => `
+              <div style="padding:5px 0; border-bottom:1px solid #f1f5f9;">
+                <strong style="color:var(--primary);">${escapeHtml(ev.event)}</strong>
+                <div class="mono" style="font-size:10.5px; color:var(--muted);">Top cluster stability: ${ev.top_cluster_stability}% · Q = ${ev.modularity}</div>
+              </div>`).join('')
+          : 'Monitoring Louvain partitions for cluster splits, merges &amp; modularity shifts...';
+
+        const taintEl = document.getElementById('taintedList');
+        const tainted = analytics.top_tainted || [];
+        taintEl.innerHTML = tainted.length
+          ? tainted.map((t) => `
+              <div class="bar-row">
+                <div class="bar-head">
+                  <span class="mono">${escapeHtml(t.label)} ${t.is_seed ? '(Seed)' : '(Downstream)'}</span>
+                  <strong>${t.risk_taint}%</strong>
+                </div>
+                <div class="bar-track"><div class="bar-fill danger" style="width:${Math.min(100, t.risk_taint)}%"></div></div>
+              </div>`).join('')
+          : 'No high-taint nodes yet. Trigger an anomaly to see PageRank risk diffusion.';
+      }
+
+      if (ml) {
+        document.getElementById('mlBufferBadge').textContent = `${ml.buffer_size || 0} embeddings`;
+        const mlEl = document.getElementById('mlTopList');
+        const topMl = ml.top_ml_nodes || [];
+        mlEl.innerHTML = topMl.length
+          ? topMl.map((m) => `
+              <div class="bar-row">
+                <div class="bar-head">
+                  <span class="mono">${escapeHtml(shortAddr(m.node))} · ${escapeHtml(m.top_feature)}</span>
+                  <strong>${m.ml_score}/100</strong>
+                </div>
+                <div class="bar-track"><div class="bar-fill violet" style="width:${Math.min(100, m.ml_score)}%"></div></div>
+              </div>`).join('')
+          : 'Online Isolation Forest warms up after 18 entity embeddings.';
+      }
+    }
+
+    function renderPartitionReport(report) {
+      if (!report || !report.edge_cut) return;
+      document.getElementById('partRecommendation').textContent = report.recommendation || '';
+      document.getElementById('ecCutBadge').textContent = `${report.edge_cut.cut_ratio_pct}% cut`;
+      document.getElementById('ecMetrics').textContent =
+        `Comm cost: ${report.edge_cut.comm_cost_units ?? report.edge_cut.cut_edges * 2} msgs · Skew: ${report.power_law_skew || 1}x`;
+
+      const maxEc = Math.max(1, ...(report.edge_cut.shard_loads || [1]));
+      document.getElementById('ecBars').innerHTML = (report.edge_cut.shard_loads || []).map((cnt, idx) => `
+        <div class="bar-row">
+          <div class="bar-head"><span>Shard ${idx}</span><span class="mono">${cnt} nodes</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(cnt / maxEc) * 100}%"></div></div>
+        </div>`).join('');
+
+      document.getElementById('vcRfBadge').textContent = `RF ${report.vertex_cut.replication_factor}`;
+      document.getElementById('vcMetrics').textContent =
+        `Sync cost: ${report.vertex_cut.sync_cost_units ?? report.vertex_cut.mirrored_vertices} ops · Mirrored hubs: ${report.vertex_cut.mirrored_vertices}`;
+
+      const maxVc = Math.max(1, ...(report.vertex_cut.shard_loads || [1]));
+      document.getElementById('vcBars').innerHTML = (report.vertex_cut.shard_loads || []).map((cnt, idx) => `
+        <div class="bar-row">
+          <div class="bar-head"><span>Shard ${idx}</span><span class="mono">${cnt} edges</span></div>
+          <div class="bar-track"><div class="bar-fill emerald" style="width:${(cnt / maxVc) * 100}%"></div></div>
+        </div>`).join('');
+    }
+
+    function renderForensicsResult(res) {
+      if (res.storage) {
+        document.getElementById('storageBadge').textContent =
+          res.storage.connected ? 'Neo4j Connected' : `Mirror (${res.storage.mirror_nodes} nodes)`;
+      }
+      const peels = res.peel_chains?.chains || [];
+      document.getElementById('peelCountBadge').textContent = peels.length;
+      document.getElementById('peelChainsList').innerHTML = peels.length
+        ? peels.map((p) => `
+            <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
+              <div class="mono" style="color:var(--primary);">${p.chain.map(shortAddr).join(' → ')}</div>
+              <div style="font-size:10.5px; color:var(--muted);">Weights: ${p.amounts.join(' → ')} (${p.span_sec}s)</div>
+            </div>`).join('')
+        : 'No 3–4 hop chains detected yet. Click <strong>+ Peel Chain</strong> to test.';
+
+      const loops = res.wash_loops?.loops || [];
+      document.getElementById('loopCountBadge').textContent = loops.length;
+      document.getElementById('washLoopsList').innerHTML = loops.length
+        ? loops.map((l) => `
+            <div style="padding:6px 0; border-bottom:1px solid #f1f5f9;">
+              <div class="mono" style="color:var(--rose);">${l.cycle_nodes.map(shortAddr).join(' → ')}</div>
+              <div style="font-size:10.5px; color:var(--muted);">${l.hops} hops · ${l.total_btc} total</div>
+            </div>`).join('')
+        : 'No circular loops detected yet.';
+
+      if (res.peel_chains?.cypher) document.getElementById('cypherPreview').textContent = res.peel_chains.cypher;
+
+      const whBox = document.getElementById('walletHistoryBox');
+      if (res.wallet_history) {
+        whBox.style.display = 'block';
+        const wh = res.wallet_history;
+        whBox.innerHTML = wh.found
+          ? `<h3>Entity History (${escapeHtml(wh.source)}) <span class="mono" style="color:var(--primary);">${escapeHtml(shortAddr(wh.address))}</span></h3>
+             <div style="font-size:11.5px; color:#334155;">In: <strong>${wh.in_txs}</strong> (${wh.total_in_btc}) · Out: <strong>${wh.out_txs}</strong> (${wh.total_out_btc}) · Flags: <strong>${(wh.anomalies || []).length}</strong></div>`
+          : `<h3>Entity History</h3><div style="font-size:11.5px; color:var(--muted);">No record found for "${escapeHtml(wh.address || '')}".</div>`;
+      } else {
+        whBox.style.display = 'none';
+      }
+    }
+
+    function switchIntelTab(tab) {
+      const map = {
+        stream: ['tabBtnStream', 'tabStream'],
+        bench: ['tabBtnBench', 'tabBench'],
+        analytics: ['tabBtnAnalytics', 'tabAnalytics'],
+        forensics: ['tabBtnForensics', 'tabForensics'],
+        partition: ['tabBtnPartition', 'tabPartition']
+      };
+      Object.values(map).forEach(([b, p]) => {
+        document.getElementById(b).classList.remove('active');
+        document.getElementById(p).classList.remove('active');
+      });
+      document.getElementById(map[tab][0]).classList.add('active');
+      document.getElementById(map[tab][1]).classList.add('active');
+
+      if (tab === 'bench') drawBenchmarkChart();
+      if (tab === 'forensics') runForensicScan();
+      if (tab === 'partition') refreshPartitionReport();
+    }
+
+    function runForensicScan() {
+      const wallet = document.getElementById('forensicWalletInput').value.trim();
+      sendCommand({ action: 'run_forensics', wallet });
+    }
+
+    function refreshPartitionReport() {
+      const k = getLiveSliderConfig().partition_count;
+      sendCommand({ action: 'get_partition_report', k });
+    }
+
+    function setStreamMode(mode, speed) {
+      currentStreamMode = mode;
+      document.getElementById('modeLiveBtn').classList.toggle('active', mode === 'live');
+      document.getElementById('modeReplay1Btn').classList.toggle('active', mode === 'replay' && speed === 1);
+      document.getElementById('modeReplay3Btn').classList.toggle('active', mode === 'replay' && speed === 3);
+
+      const pill = document.getElementById('statusPill');
+      const txt = document.getElementById('statusText');
+      if (mode === 'replay') {
+        pill.classList.remove('fallback');
+        pill.classList.add('replay');
+        txt.textContent = `Time-Travel Replay (${speed}x)`;
+      } else {
+        pill.classList.remove('replay');
+        txt.textContent = `Live · ${(SOURCE_META[activeSource] || SOURCE_META.blockchain).label}`;
+      }
+      sendCommand({ action: 'set_mode', mode, speed });
+    }
+
+    // 5. Inspector, Side Panel, Details Pop-Up, Focus Mode & Inbox
     function showNodeInspector(d) {
       currentInspectedAddress = d.id || '';
       document.getElementById('inspAddr').textContent = d.id || 'N/A';
@@ -1108,295 +1305,29 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
 
     function closeInspector() { document.getElementById('nodeInspector').classList.remove('visible'); }
 
-    function runSmoothLayout(force = false) {
-      if (!cy || !graphOpen || graphFrozen || (layoutPaused && !force)) return;
-      const now = Date.now();
-      if (!force && now - lastLayoutTime < 1800) return;
-      lastLayoutTime = now;
-      cy.layout({
-        name: 'cose', animate: true, animationDuration: 450, randomize: false, fit: false,
-        nodeRepulsion: () => 5200, idealEdgeLength: () => 75, gravity: 0.35
-      }).run();
-    }
-
-    function fitGraph() { if (cy) cy.animate({ fit: { padding: 36 } }, { duration: 400 }); }
-
-    function togglePauseLayout() {
-      layoutPaused = !layoutPaused;
-      document.getElementById('pauseBtn').textContent = layoutPaused ? 'Resume Layout' : 'Pause Layout';
-    }
-
-    function toggleGraphView() {
-      graphOpen = !graphOpen;
-      document.getElementById('graphShell').classList.toggle('open', graphOpen);
-      document.getElementById('graphSwitch').classList.toggle('active', graphOpen);
-      document.getElementById('graphToggleLabel').textContent = graphOpen ? 'Hide Graph' : 'Show Graph';
-      if (graphOpen && cy) setTimeout(() => { cy.resize(); fitGraph(); }, 350);
-    }
-
-    function upsertGraphElements(nodes, edges, removedNodes = [], removedEdges = []) {
-      if (!cy) return;
-      if (graphFrozen) {
-        pausedUpdatesCount += 1;
-        updateFocusBufferUI();
-        return;
-      }
-
-      let structureChanged = false;
-      cy.batch(() => {
-        removedEdges.forEach((eid) => { const el = cy.getElementById(eid); if (el.length) el.remove(); });
-        removedNodes.forEach((nid) => { const el = cy.getElementById(nid); if (el.length) el.remove(); });
-
-        const cx = cy.width() / 2 || 400;
-        const cyMid = cy.height() / 2 || 260;
-
-        nodes.forEach((n) => {
-          const existing = cy.getElementById(n.id);
-          if (existing.length) existing.data(n);
-          else {
-            structureChanged = true;
-            cy.add({
-              group: 'nodes', data: n,
-              position: { x: cx + (Math.random() - 0.5) * 180, y: cyMid + (Math.random() - 0.5) * 180 }
-            });
-          }
-        });
-
-        edges.forEach((e) => {
-          const existing = cy.getElementById(e.id);
-          if (existing.length) { existing.data(e); existing.addClass('fresh'); }
-          else if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) {
-            structureChanged = true;
-            cy.add({ group: 'edges', data: e, classes: 'fresh' });
-          }
-        });
-      });
-
-      setTimeout(() => {
-        if (cy && !graphFrozen) edges.forEach((e) => cy.getElementById(e.id).removeClass('fresh'));
-      }, 900);
-
-      if (structureChanged) runSmoothLayout();
-      else cy.style().update();
-    }
-
-    function replaceGraphFromSnapshot(snapshot) {
-      if (!cy || !snapshot) return;
-      cy.batch(() => {
-        cy.elements().remove();
-        const cx = cy.width() / 2 || 400;
-        const cyMid = cy.height() / 2 || 260;
-        (snapshot.nodes || []).forEach((n) => {
-          cy.add({ group: 'nodes', data: n, position: { x: cx + (Math.random() - 0.5) * 220, y: cyMid + (Math.random() - 0.5) * 220 } });
-        });
-        (snapshot.edges || []).forEach((e) => {
-          if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) cy.add({ group: 'edges', data: e });
-        });
-      });
-      runSmoothLayout(true);
-      setTimeout(() => fitGraph(), 480);
-    }
-
-    // 2. Phase 2 Intelligence Tabs Rendering
-    function switchIntelTab(tab) {
-      const map = {
-        stream: ['tabBtnStream', 'tabStream'],
-        forensics: ['tabBtnForensics', 'tabForensics'],
-        analytics: ['tabBtnAnalytics', 'tabAnalytics'],
-        partition: ['tabBtnPartition', 'tabPartition']
-      };
-      Object.values(map).forEach(([btnId, paneId]) => {
-        document.getElementById(btnId).classList.remove('active');
-        document.getElementById(paneId).classList.remove('active');
-      });
-      document.getElementById(map[tab][0]).classList.add('active');
-      document.getElementById(map[tab][1]).classList.add('active');
-
-      if (tab === 'forensics') runForensicScan();
-      if (tab === 'partition') refreshPartitionReport();
-    }
-
-    function renderAnalyticsAndML(analytics, ml) {
-      if (analytics) {
-        document.getElementById('kpiCommunities').textContent =
-          `${analytics.num_communities || 0} Louvain clusters · Q = ${Number(analytics.modularity || 0).toFixed(2)}`;
-        document.getElementById('modularityBadge').textContent = `Q = ${Number(analytics.modularity || 0).toFixed(3)}`;
-
-        const taintEl = document.getElementById('taintedList');
-        const tainted = analytics.top_tainted || [];
-        taintEl.innerHTML = tainted.length
-          ? tainted.map((t) => `
-              <div class="bar-row">
-                <div class="bar-head">
-                  <span class="mono">${escapeHtml(t.label)} ${t.is_seed ? '(Seed)' : '(Downstream)'}</span>
-                  <strong>${t.risk_taint}%</strong>
-                </div>
-                <div class="bar-track"><div class="bar-fill danger" style="width:${Math.min(100, t.risk_taint)}%"></div></div>
-              </div>`).join('')
-          : '<span style="color:var(--muted);">No high-taint nodes yet. Trigger an anomaly to see PageRank risk diffusion.</span>';
-
-        const bridgesEl = document.getElementById('bridgesList');
-        const bridges = analytics.top_bridges || [];
-        bridgesEl.innerHTML = bridges.length
-          ? bridges.map((b) => `
-              <div class="feed-row" style="padding:6px 4px;">
-                <span class="mono">${escapeHtml(b.label)} <span style="color:var(--muted);">(Cluster ${b.community_id})</span></span>
-                <span class="mono" style="color:var(--primary); font-weight:600;">BC = ${b.betweenness} · deg ${b.degree}</span>
-              </div>`).join('')
-          : '<span style="color:var(--muted);">Waiting for multi-hop bridge nodes...</span>';
-      }
-
-      if (ml) {
-        document.getElementById('kpiMLStatus').textContent = ml.ready ? `Active (${ml.retrain_count}x)` : `Warming (${ml.buffer_size}/18)`;
-        document.getElementById('mlBufferBadge').textContent = `${ml.buffer_size || 0} embeddings`;
-        const mlEl = document.getElementById('mlTopList');
-        const topMl = ml.top_ml_nodes || [];
-        mlEl.innerHTML = topMl.length
-          ? topMl.map((m) => `
-              <div class="bar-row">
-                <div class="bar-head">
-                  <span class="mono">${escapeHtml(shortAddr(m.node))} · ${escapeHtml(m.top_feature)}</span>
-                  <strong>${m.ml_score}/100</strong>
-                </div>
-                <div class="bar-track"><div class="bar-fill violet" style="width:${Math.min(100, m.ml_score)}%"></div></div>
-              </div>`).join('')
-          : '<span style="color:var(--muted);">Online Isolation Forest warms up automatically after 18 wallet embeddings.</span>';
-      }
-    }
-
-    function renderPartitionReport(report) {
-      if (!report || !report.edge_cut) return;
-      document.getElementById('partRecommendation').textContent = report.recommendation || '';
-      document.getElementById('ecCutBadge').textContent = `${report.edge_cut.cut_ratio_pct}% cut`;
-      document.getElementById('ecMetrics').textContent =
-        `Cut edges: ${report.edge_cut.cut_edges}/${report.edges} · Balance: ${report.edge_cut.balance_ratio}x · Skew: ${report.power_law_skew || 1}x`;
-
-      const maxEc = Math.max(1, ...(report.edge_cut.shard_loads || [1]));
-      document.getElementById('ecBars').innerHTML = (report.edge_cut.shard_loads || []).map((cnt, idx) => `
-        <div class="bar-row">
-          <div class="bar-head"><span>Shard ${idx}</span><span class="mono">${cnt} nodes</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(cnt / maxEc) * 100}%"></div></div>
-        </div>`).join('');
-
-      document.getElementById('vcRfBadge').textContent = `RF ${report.vertex_cut.replication_factor}`;
-      document.getElementById('vcMetrics').textContent =
-        `Mirrored hubs: ${report.vertex_cut.mirrored_vertices} · Balance: ${report.vertex_cut.balance_ratio}x`;
-
-      const maxVc = Math.max(1, ...(report.vertex_cut.shard_loads || [1]));
-      document.getElementById('vcBars').innerHTML = (report.vertex_cut.shard_loads || []).map((cnt, idx) => `
-        <div class="bar-row">
-          <div class="bar-head"><span>Shard ${idx}</span><span class="mono">${cnt} edges</span></div>
-          <div class="bar-track"><div class="bar-fill" style="background:linear-gradient(90deg,#10b981,#0ea5e9); width:${(cnt / maxVc) * 100}%"></div></div>
-        </div>`).join('');
-    }
-
-    function renderForensicsResult(res) {
-      if (res.storage) {
-        document.getElementById('kpiStorageSub').textContent =
-          res.storage.connected ? 'Storage: Neo4j Connected' : `Storage: Mirror (${res.storage.mirror_nodes} nodes)`;
-      }
-
-      const peels = res.peel_chains?.chains || [];
-      document.getElementById('peelCountBadge').textContent = peels.length;
-      document.getElementById('peelChainsList').innerHTML = peels.length
-        ? peels.map((p) => `
-            <div style="padding:7px 0; border-bottom:1px solid #f1f5f9;">
-              <div class="mono" style="color:var(--primary);">${p.chain.map(shortAddr).join(' → ')}</div>
-              <div style="font-size:11px; color:var(--muted);">Amounts: ${p.amounts.join(' → ')} BTC (${p.span_sec}s)</div>
-            </div>`).join('')
-        : 'No 3–4 hop peel chains detected yet. Click <strong>+ Peel Chain</strong> in the top bar to test.';
-
-      const loops = res.wash_loops?.loops || [];
-      document.getElementById('loopCountBadge').textContent = loops.length;
-      document.getElementById('washLoopsList').innerHTML = loops.length
-        ? loops.map((l) => `
-            <div style="padding:7px 0; border-bottom:1px solid #f1f5f9;">
-              <div class="mono" style="color:var(--rose);">${l.cycle_nodes.map(shortAddr).join(' → ')}</div>
-              <div style="font-size:11px; color:var(--muted);">${l.hops} hops · ${l.total_btc} BTC cycled</div>
-            </div>`).join('')
-        : 'No circular wash-trading loops detected yet.';
-
-      if (res.peel_chains?.cypher) {
-        document.getElementById('cypherPreview').textContent = res.peel_chains.cypher;
-      }
-
-      const whBox = document.getElementById('walletHistoryBox');
-      if (res.wallet_history) {
-        whBox.style.display = 'block';
-        const wh = res.wallet_history;
-        whBox.innerHTML = wh.found
-          ? `<h3>Wallet History (${escapeHtml(wh.source)}) <span class="mono" style="color:var(--primary);">${escapeHtml(shortAddr(wh.address))}</span></h3>
-             <div style="font-size:12px; color:#334155;">
-               In Txs: <strong>${wh.in_txs}</strong> (${wh.total_in_btc} BTC) · Out Txs: <strong>${wh.out_txs}</strong> (${wh.total_out_btc} BTC) · Historical Flags: <strong>${(wh.anomalies || []).length}</strong>
-             </div>`
-          : `<h3>Wallet History</h3><div style="font-size:12px; color:var(--muted);">No historical record found for "${escapeHtml(wh.address || '')}".</div>`;
-      } else {
-        whBox.style.display = 'none';
-      }
-    }
-
-    function runForensicScan() {
-      const wallet = document.getElementById('forensicWalletInput').value.trim();
-      if (backendConnected && sendCommand({ action: 'run_forensics', wallet })) return;
-      // Lightweight client-side fallback scan
-      renderForensicsResult(runClientForensics(wallet));
-    }
-
-    function refreshPartitionReport() {
-      const k = getLiveSliderConfig().partition_count;
-      if (backendConnected && sendCommand({ action: 'get_partition_report', k })) return;
-      renderPartitionReport(computeClientPartitionReport(k));
-    }
-
-    function setStreamMode(mode, speed) {
-      currentStreamMode = mode;
-      document.getElementById('modeLiveBtn').classList.toggle('active', mode === 'live');
-      document.getElementById('modeReplay1Btn').classList.toggle('active', mode === 'replay' && speed === 1);
-      document.getElementById('modeReplay3Btn').classList.toggle('active', mode === 'replay' && speed === 3);
-
-      const pill = document.getElementById('statusPill');
-      const txt = document.getElementById('statusText');
-      if (mode === 'replay') {
-        pill.classList.remove('fallback');
-        pill.classList.add('replay');
-        txt.textContent = `Time-Travel Replay (${speed}x)`;
-      } else {
-        pill.classList.remove('replay');
-        txt.textContent = feedIsLive ? 'Live · Blockchain.com Mainnet' : 'Connecting to Blockchain.com...';
-      }
-      sendCommand({ action: 'set_mode', mode, speed });
-    }
-
-    // 3. Anomalies Side Panel -> Details Modal -> Focus & Pause -> Inbox
     function addIncomingAlerts(alerts) {
       if (!alerts || !alerts.length) return;
-      const liveWhale = getLiveSliderConfig().whale_btc_threshold;
-      let addedAny = false;
-
+      const liveThr = getLiveSliderConfig().whale_btc_threshold;
       alerts.forEach((a) => {
-        if (a.type === 'Whale Volume Spike') {
-          const transferBtc = parseFloat(a.metrics?.['Transfer (BTC)']);
-          if (Number.isFinite(transferBtc) && transferBtc < liveWhale) return;
+        if (a.type.includes('Volume') || a.type.includes('Magnitude') || a.type.includes('Surge')) {
+          const val = parseFloat(Object.values(a.metrics || {})[0]);
+          if (Number.isFinite(val) && a.type.includes('Volume') && val < liveThr) return;
         }
-        const exists = unreadAlerts.some((x) => x.id === a.id) || inboxItems.some((x) => x.id === a.id);
-        if (!exists) {
+        if (!unreadAlerts.some((x) => x.id === a.id) && !inboxItems.some((x) => x.id === a.id)) {
           unreadAlerts.unshift(a);
-          addedAny = true;
         }
       });
-
       if (unreadAlerts.length > 40) unreadAlerts = unreadAlerts.slice(0, 40);
-      renderAnomalySidePanel(addedAny);
+      renderAnomalySidePanel();
     }
 
-    function renderAnomalySidePanel(bump = false) {
-      syncAllCounters(bump, false);
+    function renderAnomalySidePanel() {
+      syncAllCounters();
       const list = document.getElementById('anomalySideList');
       if (unreadAlerts.length === 0) {
-        list.innerHTML = `<div class="empty-state">No unread anomalies.<br />Rule &amp; ML detections will stream here automatically.</div>`;
+        list.innerHTML = `<div class="empty-state">No unread anomalies.<br />Rule &amp; ML detections will appear here automatically.</div>`;
         return;
       }
-
       list.innerHTML = unreadAlerts.map((item) => {
         const timeStr = new Date(item.timestamp * 1000).toLocaleTimeString();
         const cardCls = item.type.startsWith('ML') ? 'ml' : (item.severity === 'medium' ? 'medium' : 'high');
@@ -1440,16 +1371,12 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
         document.getElementById('popupMLBadge').textContent = `ML Risk: ${alert.ml_score ?? 0}/100`;
         document.getElementById('popupMLBars').innerHTML = attrs.map((f) => `
           <div class="bar-row">
-            <div class="bar-head">
-              <span>${escapeHtml(f.feature)}</span>
-              <span class="mono">${f.z_score >= 0 ? '+' : ''}${f.z_score}σ</span>
-            </div>
+            <div class="bar-head"><span>${escapeHtml(f.feature)}</span><span class="mono">${f.z_score >= 0 ? '+' : ''}${f.z_score}σ</span></div>
             <div class="bar-track"><div class="bar-fill violet" style="width:${Math.min(100, f.impact)}%"></div></div>
           </div>`).join('');
       } else {
         mlSec.style.display = 'none';
       }
-
       document.getElementById('popupBackdrop').classList.add('show');
     }
 
@@ -1460,8 +1387,8 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       if (!alert) return;
       unreadAlerts = unreadAlerts.filter((a) => a.id !== alert.id);
       if (!inboxItems.some((a) => a.id === alert.id)) inboxItems.unshift(alert);
-      renderAnomalySidePanel(false);
-      renderInbox(true);
+      renderAnomalySidePanel();
+      renderInbox();
       sendCommand({ action: 'mark_read', alert_id: alert.id });
     }
 
@@ -1499,20 +1426,18 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
         if (!node.length) {
           node = cy.add({
             group: 'nodes',
-            data: {
-              id: alert.primary_node, label: alert.short_node, degree: 6, in_degree: 0, out_degree: 0,
-              total_in_btc: 0, total_out_btc: 0, is_anomaly: true, risk_taint: 95, ml_score: alert.ml_score || 0
-            },
-            position: { x: cy.width() / 2 || 400, y: cy.height() / 2 || 260 }
+            data: { id: alert.primary_node, label: alert.short_node, degree: 6, is_anomaly: true, risk_taint: 95, ml_score: alert.ml_score || 0 },
+            position: { x: cy.width() / 2 || 400, y: cy.height() / 2 || 250 }
           });
         }
         const neighborhood = node.closedNeighborhood();
         cy.elements().difference(neighborhood).addClass('dimmed');
         node.addClass('focused-target');
         node.select();
-        cy.animate({ center: { eles: node }, zoom: 1.75 }, { duration: 480 });
+        cy.center(node);
+        cy.zoom(1.65);
         showNodeInspector(node.data());
-      }, 220);
+      }, 150);
     }
 
     function updateFocusBufferUI() {
@@ -1529,41 +1454,32 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       document.getElementById('resumeToolbarBtn').style.display = 'none';
       closeInspector();
       if (cy) cy.elements().removeClass('dimmed focused-target');
-
-      if (backendConnected && sendCommand({ action: 'get_snapshot' })) return;
-      if (clientMode) {
-        replaceGraphFromSnapshot({ nodes: [...clientGraph.nodes.values()], edges: [...clientGraph.edges.values()] });
-      } else {
-        fitGraph();
-      }
+      sendCommand({ action: 'get_snapshot' });
     }
 
-    function renderInbox(bump = false) {
-      syncAllCounters(false, bump);
+    function renderInbox() {
+      syncAllCounters();
       const list = document.getElementById('inboxList');
       if (inboxItems.length === 0) {
         list.innerHTML = `<div class="empty-state">No archived anomalies yet. Click an alert to inspect or focus.</div>`;
         return;
       }
-      list.innerHTML = inboxItems.map((item) => {
-        const timeStr = new Date(item.timestamp * 1000).toLocaleTimeString();
-        return `
-          <div class="inbox-item">
-            <div class="inbox-meta">
-              <span class="inbox-type">${escapeHtml(item.type)} · ${item.score}/100</span>
-              <span class="inbox-time">${timeStr}</span>
-            </div>
-            <div class="inbox-desc">${escapeHtml(item.summary)}</div>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span class="mono" style="color:var(--muted);">${escapeHtml(item.short_node)}</span>
-              <button class="btn btn-soft" style="padding:5px 10px; font-size:11.5px;" onclick="focusFromInbox('${escapeHtml(item.id)}')">Focus Node</button>
-            </div>
-          </div>`;
-      }).join('');
+      list.innerHTML = inboxItems.map((item) => `
+        <div class="inbox-item">
+          <div class="inbox-meta">
+            <span class="inbox-type">${escapeHtml(item.type)} · ${item.score}/100</span>
+            <span class="inbox-time">${new Date(item.timestamp * 1000).toLocaleTimeString()}</span>
+          </div>
+          <div class="inbox-desc">${escapeHtml(item.summary)}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="mono" style="color:var(--muted);">${escapeHtml(item.short_node)}</span>
+            <button class="btn btn-soft" style="padding:4px 9px; font-size:11px;" onclick="focusFromInbox('${escapeHtml(item.id)}')">Focus Node</button>
+          </div>
+        </div>`).join('');
     }
 
-    function focusFromInbox(alertId) {
-      const item = inboxItems.find((a) => a.id === alertId);
+    function focusFromInbox(id) {
+      const item = inboxItems.find((a) => a.id === id);
       if (item) enterFocusMode(item);
     }
 
@@ -1572,12 +1488,12 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       document.getElementById('drawerOverlay').classList.toggle('open', open);
     }
 
-    // 4. Stats, Feed, Actions & Client Fail-Safe Engine
+    // 6. Stats, Feed, Browser Multi-Source Relay & WebSocket
     function updateStats(s) {
       if (!s) return;
       document.getElementById('kpiNodes').textContent = s.active_nodes;
       document.getElementById('kpiEdges').textContent = s.active_edges;
-      document.getElementById('kpiRateSub').textContent = `${Number(s.tx_per_sec || 0).toFixed(1)} tx/s · ${s.components} components`;
+      document.getElementById('kpiRateSub').textContent = `${Number(s.tx_per_sec || 0).toFixed(1)}/s · ${s.components} components`;
     }
 
     function appendTxFeed(tx) {
@@ -1589,14 +1505,14 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       row.innerHTML = `
         <div>
           <strong class="mono">${escapeHtml(tx.sender)}</strong>
-          <span style="color:var(--muted); font-size:11.5px;"> → ${tx.outputs} out</span>
+          <span style="color:var(--muted); font-size:11px;"> → ${tx.outputs} out</span>
         </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span class="mono" style="color:var(--violet); font-size:11px;">ML ${Number(tx.ml_score || 0).toFixed(0)}</span>
-          <span class="mono" style="font-weight:600; color:${tx.is_anomaly ? 'var(--rose)' : 'var(--primary)'};">${tx.btc} BTC</span>
+        <div style="display:flex; align-items:center; gap:9px;">
+          <span class="mono" style="color:var(--violet); font-size:10.5px;">ML ${Number(tx.ml_score || 0).toFixed(0)}</span>
+          <span class="mono" style="font-weight:600; color:${tx.is_anomaly ? 'var(--rose)' : 'var(--primary)'};">${tx.btc} ${escapeHtml(tx.unit || 'BTC')}</span>
         </div>`;
       feed.prepend(row);
-      while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+      while (feed.children.length > 18) feed.removeChild(feed.lastChild);
     }
 
     function setFeedStatus(status, source = '') {
@@ -1605,238 +1521,79 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       const txt = document.getElementById('statusText');
       pill.classList.remove('replay');
 
+      const label = (SOURCE_META[activeSource] || SOURCE_META.blockchain).label;
       if (status === 'live') {
         feedIsLive = true;
         clearTimeout(relayFallbackTimer);
         pill.classList.remove('fallback');
-        txt.textContent = source === 'browser_relay' ? 'Live · Blockchain.com (Relay)' : 'Live · Blockchain.com Mainnet';
+        txt.textContent = source === 'browser_relay' ? `Live · ${label} (Relay)` : `Live · ${label}`;
       } else if (status === 'upstream_blocked') {
         pill.classList.add('fallback');
-        txt.textContent = 'Connecting via Direct Relay...';
-        startBrowserBlockchainRelay();
+        txt.textContent = `Direct Relay · ${label}`;
+        startBrowserRelayForSource(activeSource);
       } else if (status === 'fallback') {
         pill.classList.add('fallback');
-        txt.textContent = 'Fallback Stream';
+        txt.textContent = `Simulated Stream · ${label}`;
       } else {
         pill.classList.remove('fallback');
-        txt.textContent = 'Connecting to Blockchain.com...';
+        txt.textContent = `Connecting · ${label}...`;
       }
     }
 
     function simulateAnomaly() {
       pushConfig();
-      if (backendConnected && sendCommand({ action: 'simulate_anomaly' })) return;
-      processTxClientSide(buildClientSyntheticAnomalyTx());
+      sendCommand({ action: 'simulate_anomaly' });
     }
 
     function simulatePeelChain() {
       pushConfig();
-      if (backendConnected && sendCommand({ action: 'simulate_peel_chain' })) {
+      if (sendCommand({ action: 'simulate_peel_chain' })) {
         setTimeout(() => runForensicScan(), 700);
-        return;
       }
-      buildClientPeelChainTxs().forEach((tx) => processTxClientSide(tx));
-      switchIntelTab('forensics');
     }
 
-    // Client-side fallback helpers (active only if backend WS is unavailable)
-    function isPotentiallyAnomalousTx(tx) {
-      const cfg = getLiveSliderConfig();
-      const outs = tx.out || [];
-      const ins = tx.inputs || [];
-      if (outs.length >= clientGraph.fanoutThreshold || ins.length >= clientGraph.faninThreshold) return true;
-      let sats = 0;
-      for (let i = 0; i < outs.length; i++) sats += (outs[i]?.value || 0);
-      return (sats / 1e8) >= cfg.whale_btc_threshold;
+    function stopBrowserRelay() {
+      clearInterval(relayPingTimer);
+      if (relayWs) { try { relayWs.close(); } catch (e) {} relayWs = null; }
     }
 
-    function buildClientSyntheticAnomalyTx() {
-      const rand = () => 'bc1q' + Math.random().toString(16).slice(2) + Math.random().toString(16).slice(2, 12);
-      const sender = rand();
-      const out = Array.from({ length: 12 }, () => ({ addr: rand(), value: Math.floor((0.4 + Math.random() * 0.7) * 1e8) }));
-      return { hash: Math.random().toString(16).slice(2), inputs: [{ prev_out: { addr: sender, value: 9e8 } }], out };
-    }
-
-    function buildClientPeelChainTxs() {
-      const now = Date.now() / 1000;
-      const w = Array.from({ length: 6 }, (_, i) => `bc1qforensic${i}${Math.random().toString(16).slice(2, 10)}`);
-      return [
-        { hash: 'p1', _ts: now, inputs: [{ prev_out: { addr: w[0], value: 3.8e8 } }], out: [{ addr: w[1], value: 3.5e8 }, { addr: 'bc1qpeel0' + Math.random().toString(16).slice(2, 8), value: 0.25e8 }] },
-        { hash: 'p2', _ts: now + 2, inputs: [{ prev_out: { addr: w[1], value: 3.5e8 } }], out: [{ addr: w[2], value: 3.2e8 }, { addr: 'bc1qpeel1' + Math.random().toString(16).slice(2, 8), value: 0.25e8 }] },
-        { hash: 'p3', _ts: now + 4, inputs: [{ prev_out: { addr: w[2], value: 3.2e8 } }], out: [{ addr: w[3], value: 2.9e8 }] },
-        { hash: 'l1', _ts: now + 6, inputs: [{ prev_out: { addr: w[3], value: 1.8e8 } }], out: [{ addr: w[4], value: 1.8e8 }] },
-        { hash: 'l2', _ts: now + 8, inputs: [{ prev_out: { addr: w[4], value: 1.75e8 } }], out: [{ addr: w[5], value: 1.75e8 }] },
-        { hash: 'l3', _ts: now + 10, inputs: [{ prev_out: { addr: w[5], value: 1.7e8 } }], out: [{ addr: w[3], value: 1.7e8 }] }
-      ];
-    }
-
-    function processTxClientSide(tx) {
-      const cfg = getLiveSliderConfig();
-      const now = tx._ts || (Date.now() / 1000);
-      const senders = [...new Set((tx.inputs || []).map((i) => i?.prev_out?.addr).filter(Boolean))];
-      const recvMap = new Map();
-      (tx.out || []).forEach((o) => { if (o?.addr) recvMap.set(o.addr, (recvMap.get(o.addr) || 0) + (o.value || 0) / 1e8); });
-      if (!senders.length || !recvMap.size) return;
-
-      const rawIn = senders.length, rawOut = recvMap.size;
-      let totalBtc = 0; recvMap.forEach((v) => { totalBtc += v; });
-      const primary = senders[0];
-      const cappedRecv = [...recvMap.keys()].slice(0, 12);
-      const touched = new Set(); const addedEdges = [];
-
-      cappedRecv.forEach((r) => {
-        if (r === primary) return;
-        [primary, r].forEach((id) => {
-          if (!clientGraph.nodes.has(id)) {
-            clientGraph.nodes.set(id, {
-              id, label: shortAddr(id), degree: 0, in_degree: 0, out_degree: 0,
-              total_in_btc: 0, total_out_btc: 0, tx_count: 0, is_anomaly: false,
-              community_id: Math.abs(id.charCodeAt(4) || 0) % 5, partition_id: Math.abs(id.charCodeAt(5) || 0) % cfg.partition_count,
-              risk_taint: 0, ml_score: 0, last_seen: now
-            });
-          }
-          clientGraph.nodes.get(id).last_seen = now;
-          clientGraph.nodes.get(id).tx_count++;
-        });
-        const eid = `${primary}__${r}`;
-        const btc = +(recvMap.get(r)).toFixed(5);
-        clientGraph.nodes.get(primary).total_out_btc = +(clientGraph.nodes.get(primary).total_out_btc + btc).toFixed(5);
-        clientGraph.nodes.get(r).total_in_btc = +(clientGraph.nodes.get(r).total_in_btc + btc).toFixed(5);
-        clientGraph.edges.set(eid, { id: eid, source: primary, target: r, weight: btc, count: 1, timestamp: now });
-        touched.add(primary); touched.add(r); addedEdges.push(clientGraph.edges.get(eid));
-      });
-
-      const removedEdges = [], removedNodes = [];
-      const cutoff = now - cfg.window_seconds;
-      clientGraph.edges.forEach((e, eid) => { if (e.timestamp < cutoff) { clientGraph.edges.delete(eid); removedEdges.push(eid); } });
-      clientGraph.nodes.forEach((n) => { n.in_degree = 0; n.out_degree = 0; n.degree = 0; });
-      clientGraph.edges.forEach((e) => {
-        const u = clientGraph.nodes.get(e.source), v = clientGraph.nodes.get(e.target);
-        if (u && v) { u.out_degree++; u.degree++; v.in_degree++; v.degree++; }
-      });
-      clientGraph.nodes.forEach((n, id) => { if (n.degree === 0) { clientGraph.nodes.delete(id); removedNodes.push(id); } });
-
-      const alerts = [];
-      const mkId = () => Math.random().toString(16).slice(2, 12);
-      if (rawOut >= clientGraph.fanoutThreshold) {
-        alerts.push({
-          id: mkId(), type: 'Fan-Out Star Burst', severity: rawOut >= 12 ? 'high' : 'medium', score: Math.min(99, 68 + rawOut),
-          timestamp: now, primary_node: primary, short_node: shortAddr(primary),
-          summary: `Wallet ${shortAddr(primary)} dispersed ${totalBtc.toFixed(4)} BTC across ${rawOut} wallets.`,
-          explanation: 'High Out-Degree Centrality star burst detected on live stream.',
-          metrics: { 'Out-Degree (Raw)': rawOut, 'Volume (BTC)': +totalBtc.toFixed(4) }
-        });
-      }
-      if (totalBtc >= cfg.whale_btc_threshold) {
-        alerts.push({
-          id: mkId(), type: 'Whale Volume Spike', severity: totalBtc >= cfg.whale_btc_threshold * 3 ? 'high' : 'medium',
-          score: Math.min(99, Math.floor(72 + Math.log1p(totalBtc) * 8)), timestamp: now,
-          primary_node: primary, short_node: shortAddr(primary),
-          summary: `High-value transfer of ${totalBtc.toFixed(4)} BTC initiated by ${shortAddr(primary)} (threshold: ${cfg.whale_btc_threshold.toFixed(1)} BTC).`,
-          explanation: 'Edge weight spiked above active sliding-window threshold.',
-          metrics: { 'Transfer (BTC)': +totalBtc.toFixed(4), 'Inputs / Outputs': `${rawIn} -> ${rawOut}` }
-        });
-      }
-      alerts.forEach((a) => {
-        const n = clientGraph.nodes.get(a.primary_node);
-        if (n) { n.is_anomaly = true; n.risk_taint = 95; }
-      });
-
-      clientGraph.txTimes.push(now);
-      clientGraph.txTimes = clientGraph.txTimes.filter((t) => now - t <= 10);
-      upsertGraphElements([...touched].map((id) => clientGraph.nodes.get(id)).filter(Boolean), addedEdges, removedNodes, removedEdges);
-      updateStats({ active_nodes: clientGraph.nodes.size, active_edges: clientGraph.edges.size, tx_per_sec: clientGraph.txTimes.length / 10, components: 1 });
-      appendTxFeed({ sender: shortAddr(primary), outputs: rawOut, btc: +totalBtc.toFixed(4), ml_score: 0, is_anomaly: alerts.length > 0 });
-      addIncomingAlerts(alerts);
-    }
-
-    function runClientForensics(wallet) {
-      const chains = [];
-      const adj = new Map();
-      clientGraph.edges.forEach((e) => {
-        if (!adj.has(e.source)) adj.set(e.source, []);
-        adj.get(e.source).push(e);
-      });
-      adj.forEach((e1s, a) => {
-        e1s.forEach((e1) => {
-          (adj.get(e1.target) || []).forEach((e2) => {
-            if (e2.target === a || e2.timestamp < e1.timestamp) return;
-            (adj.get(e2.target) || []).forEach((e3) => {
-              if (e3.target !== a && e3.timestamp >= e2.timestamp && chains.length < 6) {
-                chains.push({ chain: [a, e1.target, e2.target, e3.target], amounts: [e1.weight, e2.weight, e3.weight], span_sec: +(e3.timestamp - e1.timestamp).toFixed(1) });
-              }
-            });
-          });
-        });
-      });
-      return { storage: { connected: false, mirror_nodes: clientGraph.nodes.size }, peel_chains: { chains }, wash_loops: { loops: [] }, wallet_history: wallet ? { found: clientGraph.nodes.has(wallet), source: 'client-mirror', address: wallet, in_txs: 1, out_txs: 1, total_in_btc: 0, total_out_btc: 0, anomalies: [] } : null };
-    }
-
-    function computeClientPartitionReport(k) {
-      const n = clientGraph.nodes.size, m = clientGraph.edges.size;
-      const ecLoads = Array(k).fill(0), vcLoads = Array(k).fill(0);
-      clientGraph.nodes.forEach((node) => { ecLoads[node.partition_id % k]++; });
-      let cut = 0;
-      clientGraph.edges.forEach((e, idx) => {
-        const u = clientGraph.nodes.get(e.source), v = clientGraph.nodes.get(e.target);
-        if (u && v && (u.partition_id % k) !== (v.partition_id % k)) cut++;
-        vcLoads[idx % k]++;
-      });
-      return {
-        k, nodes: n, edges: m, power_law_skew: 2.5,
-        edge_cut: { cut_edges: cut, cut_ratio_pct: m ? +((cut / m) * 100).toFixed(1) : 0, balance_ratio: 1.1, shard_loads: ecLoads },
-        vertex_cut: { replication_factor: 1.28, mirrored_vertices: Math.floor(n * 0.2), balance_ratio: 1.05, shard_loads: vcLoads },
-        recommendation: 'Client-side partitioning benchmark active.'
+    // Direct browser WebSocket relay for Blockchain, RIPE RIS Live BGP, and Bluesky Jetstream
+    function startBrowserRelayForSource(src) {
+      stopBrowserRelay();
+      const endpoints = {
+        blockchain: { url: 'wss://ws.blockchain.info/inv', sub: { op: 'unconfirmed_sub' } },
+        ripe_bgp: { url: 'wss://ris-live.ripe.net/v1/ws/?client=arcnet-browser', sub: { type: 'ris_subscribe', data: { host: 'rrc21', type: 'UPDATE' } } },
+        bluesky: { url: 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post', sub: null }
       };
-    }
+      const ep = endpoints[src];
+      if (!ep) return;
 
-    // 5. Direct Blockchain.com WebSocket Relay + FastAPI WebSocket
-    function startBrowserBlockchainRelay() {
-      if (blockchainRelayWs && (blockchainRelayWs.readyState === WebSocket.OPEN || blockchainRelayWs.readyState === WebSocket.CONNECTING)) return;
       try {
-        blockchainRelayWs = new WebSocket('wss://ws.blockchain.info/inv');
-        blockchainRelayWs.onopen = () => {
-          blockchainRelayWs.send(JSON.stringify({ op: 'unconfirmed_sub' }));
-          if (clientMode) setFeedStatus('live', 'direct');
+        relayWs = new WebSocket(ep.url);
+        relayWs.onopen = () => {
+          if (ep.sub) relayWs.send(JSON.stringify(ep.sub));
           clearInterval(relayPingTimer);
           relayPingTimer = setInterval(() => {
-            if (blockchainRelayWs && blockchainRelayWs.readyState === WebSocket.OPEN) {
-              blockchainRelayWs.send(JSON.stringify({ op: 'ping' }));
+            if (relayWs && relayWs.readyState === WebSocket.OPEN && src === 'blockchain') {
+              relayWs.send(JSON.stringify({ op: 'ping' }));
             }
           }, 25000);
         };
-        blockchainRelayWs.onmessage = (evt) => {
-          if (currentStreamMode !== 'live') return;
+        relayWs.onmessage = (evt) => {
+          if (currentStreamMode !== 'live' || activeSource !== src) return;
+          const now = Date.now();
+          if (now - lastNormalRelayAt < 320) return;
+          lastNormalRelayAt = now;
           try {
             const payload = JSON.parse(evt.data);
-            if (payload.op !== 'utx' || !payload.x) return;
-            const tx = payload.x;
-            const now = Date.now();
-            const isPriority = isPotentiallyAnomalousTx(tx);
-            if (!isPriority && now - lastNormalRelayAt < 280) return;
-            if (!isPriority) lastNormalRelayAt = now;
-            if (backendConnected && sendCommand({ action: 'ingest_tx', tx })) return;
-            processTxClientSide(tx);
+            if (src === 'blockchain' && payload.op !== 'utx') return;
+            if (src === 'ripe_bgp' && payload.type !== 'ris_message') return;
+            if (src === 'bluesky' && payload.kind !== 'commit') return;
+            sendCommand({ action: 'ingest_tx', source: src, tx: payload });
           } catch (e) {}
         };
-        blockchainRelayWs.onclose = () => {
-          clearInterval(relayPingTimer);
-          blockchainRelayWs = null;
-          if (clientMode) setTimeout(startBrowserBlockchainRelay, 3000);
-        };
-        blockchainRelayWs.onerror = () => { if (blockchainRelayWs) blockchainRelayWs.close(); };
+        relayWs.onerror = () => stopBrowserRelay();
       } catch (e) {}
-    }
-
-    function stopBrowserBlockchainRelay() {
-      clearInterval(relayPingTimer);
-      if (blockchainRelayWs) { blockchainRelayWs.close(); blockchainRelayWs = null; }
-    }
-
-    function activateDirectMainnetFallback() {
-      if (backendConnected || clientMode) return;
-      clientMode = true;
-      startBrowserBlockchainRelay();
     }
 
     function connectWebSocket() {
@@ -1844,50 +1601,47 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       feedIsLive = false;
       backendConnected = false;
 
-      clearTimeout(backendConnectTimer);
-      backendConnectTimer = setTimeout(activateDirectMainnetFallback, 3500);
-
-      try {
-        socket = new WebSocket(`${proto}://${location.host}/ws/stream`);
-      } catch (e) {
-        activateDirectMainnetFallback();
-        return;
-      }
+      socket = new WebSocket(`${proto}://${location.host}/ws/stream`);
 
       socket.onopen = () => {
-        clearTimeout(backendConnectTimer);
         backendConnected = true;
-        clientMode = false;
         pushConfig();
         clearTimeout(relayFallbackTimer);
-        relayFallbackTimer = setTimeout(() => { if (!feedIsLive) startBrowserBlockchainRelay(); }, 4000);
+        relayFallbackTimer = setTimeout(() => {
+          if (!feedIsLive) startBrowserRelayForSource(activeSource);
+        }, 3500);
       };
 
       socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         if (msg.type === 'init') {
+          if (msg.snapshot?.source) applyDomainLabels(msg.snapshot.source);
           setFeedStatus(msg.status);
           if (msg.storage) {
-            document.getElementById('kpiStorageSub').textContent =
-              msg.storage.connected ? 'Storage: Neo4j Connected' : 'Storage: In-Memory Mirror';
+            document.getElementById('storageBadge').textContent =
+              msg.storage.connected ? 'Neo4j Connected' : 'Mirror Active';
           }
           if (msg.snapshot) {
-            if (msg.snapshot.nodes.length > 0 || cy.elements().length === 0) {
-              upsertGraphElements(msg.snapshot.nodes, msg.snapshot.edges);
-              updateStats(msg.snapshot.stats);
-            }
+            replaceGraphFromSnapshot(msg.snapshot);
+            updateStats(msg.snapshot.stats);
             renderAnalyticsAndML(msg.snapshot.analytics, msg.snapshot.ml);
             renderPartitionReport(msg.snapshot.partitioning);
+            (msg.snapshot.benchmarks || []).forEach(updateBenchmark);
           }
           if (msg.unread?.length) unreadAlerts = msg.unread;
           if (msg.inbox?.length) inboxItems = msg.inbox;
-          renderAnomalySidePanel(false);
-          renderInbox(false);
+          renderAnomalySidePanel();
+          renderInbox();
+        } else if (msg.type === 'source_switched') {
+          applyDomainLabels(msg.source);
+          replaceGraphFromSnapshot(msg.snapshot);
+          updateStats(msg.snapshot?.stats);
         } else if (msg.type === 'graph_update') {
-          upsertGraphElements(msg.added_nodes, msg.added_edges, msg.removed_nodes, msg.removed_edges);
+          queueGraphDiff(msg.added_nodes, msg.added_edges, msg.removed_nodes, msg.removed_edges);
           updateStats(msg.stats);
           appendTxFeed(msg.tx_summary);
           addIncomingAlerts(msg.alerts);
+          if (msg.benchmark) updateBenchmark(msg.benchmark);
           if (msg.analytics || msg.ml) renderAnalyticsAndML(msg.analytics, msg.ml);
           if (msg.partitioning) renderPartitionReport(msg.partitioning);
         } else if (msg.type === 'snapshot') {
@@ -1902,8 +1656,8 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
           if (msg.inbox.length) {
             msg.inbox.forEach((a) => { if (!inboxItems.some((x) => x.id === a.id)) inboxItems.unshift(a); });
           }
-          renderAnomalySidePanel(false);
-          renderInbox(false);
+          renderAnomalySidePanel();
+          renderInbox();
         } else if (msg.type === 'config_updated') {
           updateStats(msg.stats);
           if (msg.partitioning) renderPartitionReport(msg.partitioning);
@@ -1912,22 +1666,15 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
           renderForensicsResult(msg);
         } else if (msg.type === 'partition_report') {
           renderPartitionReport(msg.partitioning);
-          if (msg.nodes) upsertGraphElements(msg.nodes, []);
+          if (msg.nodes) queueGraphDiff(msg.nodes, []);
         }
       };
 
-      socket.onerror = () => { if (!backendConnected) activateDirectMainnetFallback(); };
       socket.onclose = () => {
-        clearTimeout(relayFallbackTimer);
-        const wasConnected = backendConnected;
         backendConnected = false;
-        if (wasConnected) {
-          stopBrowserBlockchainRelay();
-          setFeedStatus('connecting');
-          setTimeout(connectWebSocket, 2000);
-        } else {
-          activateDirectMainnetFallback();
-        }
+        stopBrowserRelay();
+        setFeedStatus('connecting');
+        setTimeout(connectWebSocket, 2000);
       };
     }
 
