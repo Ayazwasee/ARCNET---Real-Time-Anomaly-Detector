@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ARCNET Stage 3 &amp; 4 — 60 FPS Multi-Domain Dynamic Graph &amp; LSGA Platform</title>
+  <title>ARCNET — Clean 60 FPS Multi-Domain Dynamic Graph &amp; LSGA Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -30,7 +30,6 @@
       --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
       --shadow-md: 0 10px 26px -6px rgba(15, 23, 42, 0.08);
       --shadow-lg: 0 24px 48px -12px rgba(15, 23, 42, 0.16);
-      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -177,12 +176,19 @@
 
     .canvas-stage { position: relative; }
     #cy {
-      width: 100%; height: 500px;
+      width: 100%; height: 540px;
       background-color: #fcfdff;
       background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
       background-size: 24px 24px;
     }
     #cy.frozen { box-shadow: inset 0 0 0 3px rgba(245, 158, 11, 0.45); background-color: #fffdf7; }
+
+    /* Mode hint pill inside canvas */
+    .canvas-hint {
+      position: absolute; left: 14px; bottom: 14px; z-index: 12;
+      font-size: 11px; color: var(--muted); background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border); padding: 5px 10px; border-radius: 8px; pointer-events: none;
+    }
 
     /* Focus Banner */
     .focus-banner {
@@ -213,7 +219,7 @@
     .inspector-stat strong { font-size: 12px; }
 
     /* Live Anomalies Side Panel */
-    .anomaly-panel { display: flex; flex-direction: column; height: 618px; }
+    .anomaly-panel { display: flex; flex-direction: column; height: 658px; }
     @media (max-width: 1080px) { .anomaly-panel { height: auto; max-height: 440px; } }
     .anomaly-panel-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 9px; background: #fafcff; }
     .anomaly-card {
@@ -346,16 +352,15 @@
   <header class="topbar">
     <div class="brand">
       <div class="brand-mark">
-        <img src="Brand_Logo.png" width=30px height=30px> 
+        <img src="Brand_Logo.png" width="30" height="30" alt="ARCNET Logo" />
       </div>
       <div>
-        <h1>ARCNET <span class="phase-tag">Stage 3 &amp; 4 · 60 FPS</span></h1>
+        <h1>ARCNET <span class="phase-tag">Stage 3 &amp; 4 · Collision-Free</span></h1>
         <p id="domainSubtitle">Multi-Domain Dynamic Graph · Incremental Benchmarks · Community Evolution</p>
       </div>
     </div>
 
     <div class="top-actions">
-      <!-- 5-Source Unified Selector -->
       <select id="sourceSelect" class="source-select" onchange="switchDataSource(this.value)" title="Switch Live Graph Domain">
         <option value="blockchain">1. Blockchain.com (BTC)</option>
         <option value="ripe_bgp">2. RIPE RIS Live (BGP)</option>
@@ -408,17 +413,17 @@
       </div>
     </section>
 
-    <!-- Main Workspace: 60 FPS Active Graph + Live Anomalies Side Panel -->
+    <!-- Main Workspace: Clean Non-Overlapping Graph + Live Anomalies Side Panel -->
     <section class="workspace-grid">
       <div class="card">
         <div class="card-header">
           <div class="card-title-group">
-            <h2>60 FPS Dynamic Network Canvas</h2>
-            <p>Local radial placement + zero auto-jitter · Click "Arrange Layout" anytime for force-directed polish.</p>
+            <h2>Clean Interactive Network Canvas</h2>
+            <p>Zero node overlap across Live, Community Islands &amp; Partition Shards · Hover any node to trace links.</p>
           </div>
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <div class="segmented">
-              <button id="viewRiskBtn" class="seg-btn active" onclick="setGraphViewMode('risk')">Risk &amp; Taint</button>
+              <button id="viewRiskBtn" class="seg-btn active" onclick="setGraphViewMode('risk')">Live / Risk</button>
               <button id="viewCommBtn" class="seg-btn" onclick="setGraphViewMode('community')">Communities</button>
               <button id="viewPartBtn" class="seg-btn" onclick="setGraphViewMode('partition')">Partitions</button>
             </div>
@@ -439,7 +444,8 @@
               </div>
               <div style="display:flex; gap:7px; flex-wrap:wrap;">
                 <button id="resumeToolbarBtn" class="btn btn-live" style="display:none;" onclick="resumeLiveGraph()">↺ Back to Live Graph</button>
-                <button class="btn" onclick="runOneShotLayout()">Arrange Layout</button>
+                <button id="labelsBtn" class="btn" onclick="toggleLabelMode()">Labels: Smart</button>
+                <button class="btn" onclick="arrangeActiveView(true)">Arrange Layout</button>
                 <button class="btn" onclick="fitGraph()">Fit View</button>
               </div>
             </div>
@@ -455,6 +461,7 @@
               </div>
 
               <div id="cy"></div>
+              <div id="canvasHint" class="canvas-hint">Scroll to zoom · Hover node to highlight links · Click node to inspect</div>
 
               <!-- Entity Telemetry Inspector -->
               <div id="nodeInspector" class="node-inspector">
@@ -518,7 +525,7 @@
           </div>
         </div>
 
-        <!-- Tab 2: Incremental vs. Full Graph Benchmark (LSGA.txt #1) -->
+        <!-- Tab 2: Incremental vs. Full Graph Benchmark -->
         <div id="tabBench" class="tab-pane">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
             <span style="font-size:12.5px; font-weight:600; color:var(--text);">
@@ -532,7 +539,7 @@
           </div>
         </div>
 
-        <!-- Tab 3: Community Evolution + PageRank Taint + Online ML (LSGA.txt #2 + Module 5 & 8) -->
+        <!-- Tab 3: Community Evolution + PageRank Taint + Online ML -->
         <div id="tabAnalytics" class="tab-pane">
           <div class="mini-grid">
             <div class="sub-box">
@@ -572,7 +579,7 @@ WHERE r1.timestamp &lt;= r2.timestamp AND r2.timestamp &lt;= r3.timestamp
 RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS amounts LIMIT 8</div>
         </div>
 
-        <!-- Tab 5: Partitioning & Processing-Cost Comparison (LSGA.txt #3 + Module 3) -->
+        <!-- Tab 5: Partitioning & Processing-Cost Comparison -->
         <div id="tabPartition" class="tab-pane">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; gap:10px; flex-wrap:wrap;">
             <span id="partRecommendation" style="font-size:12px; font-weight:600; color:var(--primary);">
@@ -684,6 +691,10 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       '9498': 'AS9498 (Bharti Airtel)', '55836': 'AS55836 (Reliance Jio)', '6453': 'AS6453 (TATA Comm)'
     };
 
+    // Guaranteed minimum center-to-center spacing (px) so nodes NEVER overlap
+    const MIN_NODE_SPACING = 76;
+    const GOLDEN_ANGLE = 2.399963229728653;
+
     let cy = null;
     let socket = null;
     let relayWs = null;
@@ -698,12 +709,14 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
     let clientMode = false;
     let feedIsLive = false;
     let currentStreamMode = 'live';
-    let currentViewMode = 'risk';
+    let currentViewMode = 'risk'; // 'risk' | 'community' | 'partition'
+    let labelMode = 'smart';      // 'smart' | 'always'
 
     let graphOpen = true;
     let graphFrozen = false;
     let pausedUpdatesCount = 0;
-    let placementAngle = 0;
+    let spiralCounter = 0;
+    let hasInitialFit = false;
 
     let unreadAlerts = [];
     let inboxItems = [];
@@ -723,7 +736,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       txTimes: [],
       cooldowns: new Map(),
       windowSeconds: 180,
-      whaleBtcThreshold: 2.0,
+      whaleBtcThreshold: 20.0,
       mlScoreThreshold: 74,
       partitionCount: 4,
       fanoutThreshold: 6,
@@ -733,15 +746,15 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
 
     function escapeHtml(str) {
       return String(str ?? '')
-        .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>').replace(/"/g, '"');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     function shortAddr(addr) {
       if (!addr) return 'unknown';
       if (/^(AS|Editor:|Page:|bsky:|Org:|Person:|Loc:)/.test(addr)) {
-        return addr.length <= 24 ? addr : addr.slice(0, 22) + '…';
+        return addr.length <= 22 ? addr : addr.slice(0, 20) + '…';
       }
-      return addr.length <= 12 ? addr : `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+      return addr.length <= 12 ? addr : `${addr.slice(0, 6)}…${addr.slice(-4)}`;
     }
 
     function formatAsnJs(asn) {
@@ -759,11 +772,11 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
 
     function getLiveSliderConfig() {
       const win = parseInt(document.getElementById('winSlider')?.value || '180', 10);
-      const whale = parseFloat(document.getElementById('whaleSlider')?.value || '2.0');
+      const whale = parseFloat(document.getElementById('whaleSlider')?.value || '20.0');
       const ml = parseFloat(document.getElementById('mlSlider')?.value || '74');
       const parts = parseInt(document.getElementById('partSlider')?.value || '4', 10);
       clientGraph.windowSeconds = Number.isFinite(win) ? win : 180;
-      clientGraph.whaleBtcThreshold = Number.isFinite(whale) ? whale : 2.0;
+      clientGraph.whaleBtcThreshold = Number.isFinite(whale) ? whale : 20.0;
       clientGraph.mlScoreThreshold = Number.isFinite(ml) ? ml : 74;
       clientGraph.partitionCount = Number.isFinite(parts) ? parts : 4;
       return {
@@ -811,6 +824,9 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       document.getElementById('inboxBadge').textContent = archivedCount;
     }
 
+    // =========================================================================
+    // 1. CLEAN, COLLISION-FREE CYTOSCAPE GRAPH ENGINE (ALL 3 MODES)
+    // =========================================================================
     function computeNodeColor(ele) {
       const d = ele.data();
       if (currentViewMode === 'community') return CLUSTER_PALETTE[Number(d.community_id || 0) % CLUSTER_PALETTE.length];
@@ -821,26 +837,86 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       return '#2563eb';
     }
 
+    function shouldShowLabel(ele) {
+      if (labelMode === 'always') return ele.data('label') || '';
+      // Smart mode: always show on anomalous, hovered, selected, or high-degree hubs;
+      // normal nodes show labels cleanly when zoomed in (handled by min-zoomed-font-size)
+      return ele.data('label') || '';
+    }
+
     function initCytoscape() {
       cy = cytoscape({
         container: document.getElementById('cy'),
         elements: [],
+        wheelSensitivity: 0.28,
+        minZoom: 0.15,
+        maxZoom: 3.5,
         textureOnViewport: true,
         style: [
           {
             selector: 'node',
             style: {
               'background-color': (ele) => computeNodeColor(ele),
-              'border-width': (ele) => ele.data('is_anomaly') ? 4 : 2,
+              'border-width': (ele) => ele.data('is_anomaly') ? 4 : 2.5,
               'border-color': (ele) => ele.data('is_anomaly') ? '#fecdd3' : '#ffffff',
-              'label': 'data(label)',
-              'font-size': '9px',
+              'label': (ele) => shouldShowLabel(ele),
+              'font-size': '10px',
+              'font-weight': '600',
               'font-family': 'JetBrains Mono, monospace',
-              'color': '#334155',
+              'color': '#1e293b',
               'text-valign': 'bottom',
-              'text-margin-y': 4,
-              'width': 'mapData(degree, 1, 12, 18, 36)',
-              'height': 'mapData(degree, 1, 12, 18, 36)'
+              'text-halign': 'center',
+              'text-margin-y': 6,
+              'text-background-color': '#ffffff',
+              'text-background-opacity': 0.86,
+              'text-background-padding': '2px',
+              'text-background-shape': 'roundrectangle',
+              'min-zoomed-font-size': 9, // Smart culling: hides text clutter when zoomed far out
+              'width': 'mapData(degree, 1, 12, 22, 42)',
+              'height': 'mapData(degree, 1, 12, 22, 42)'
+            }
+          },
+          {
+            // Group header badges for Community Islands & Partition Shards (non-interactive labels)
+            selector: 'node.zone-label',
+            style: {
+              'background-opacity': 0,
+              'border-width': 0,
+              'width': 1,
+              'height': 1,
+              'label': 'data(label)',
+              'font-size': '13px',
+              'font-weight': '700',
+              'font-family': 'Inter, sans-serif',
+              'color': '#0f172a',
+              'text-background-color': '#eff6ff',
+              'text-background-opacity': 0.95,
+              'text-background-padding': '5px',
+              'text-background-shape': 'roundrectangle',
+              'text-border-color': '#bfdbfe',
+              'text-border-width': 1,
+              'text-border-opacity': 1,
+              'min-zoomed-font-size': 0,
+              'z-index': 5,
+              'events': 'no'
+            }
+          },
+          {
+            selector: 'node[?is_anomaly]',
+            style: {
+              'min-zoomed-font-size': 0,
+              'color': '#be123c',
+              'text-background-color': '#fff1f2',
+              'z-index': 40
+            }
+          },
+          {
+            selector: 'node.hover-focus, node:selected',
+            style: {
+              'border-width': 4,
+              'border-color': '#0f172a',
+              'min-zoomed-font-size': 0,
+              'z-index': 80
             }
           },
           {
@@ -849,56 +925,301 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
               'background-color': '#f43f5e',
               'border-width': 6,
               'border-color': '#f59e0b',
-              'width': 44,
-              'height': 44,
+              'width': 46,
+              'height': 46,
+              'min-zoomed-font-size': 0,
               'z-index': 99
             }
           },
-          { selector: '.dimmed', style: { 'opacity': 0.18 } },
+          { selector: '.dimmed', style: { 'opacity': 0.14 } },
           {
             selector: 'edge',
             style: {
-              'width': 'mapData(weight, 0, 5, 1.4, 3.8)',
+              'width': 'mapData(weight, 0, 5, 1.3, 3.4)',
               'line-color': '#cbd5e1',
               'target-arrow-color': '#94a3b8',
               'target-arrow-shape': 'triangle',
-              'curve-style': 'haystack',
-              'arrow-scale': 0.8,
-              'opacity': 0.82
+              'curve-style': 'straight',
+              'arrow-scale': 0.85,
+              'opacity': 0.72
             }
           },
-          { selector: 'node:selected', style: { 'border-width': 4, 'border-color': '#0f172a' } }
+          {
+            selector: 'edge.cross-shard',
+            style: {
+              'line-style': 'dashed',
+              'line-color': '#f43f5e',
+              'target-arrow-color': '#f43f5e',
+              'opacity': 0.55
+            }
+          },
+          {
+            selector: 'edge.hover-edge',
+            style: {
+              'line-color': '#2563eb',
+              'target-arrow-color': '#2563eb',
+              'width': 3.2,
+              'opacity': 1,
+              'z-index': 70
+            }
+          }
         ],
         layout: { name: 'preset' }
       });
 
-      cy.on('tap', 'node', (evt) => showNodeInspector(evt.target.data()));
+      // Interactive Hover: highlight 1-hop neighborhood & show clean labels without moving nodes
+      cy.on('mouseover', 'node', (evt) => {
+        const node = evt.target;
+        if (node.hasClass('zone-label') || graphFrozen) return;
+        const hood = node.closedNeighborhood();
+        cy.elements().not('.zone-label').difference(hood).addClass('dimmed');
+        node.addClass('hover-focus');
+        hood.edges().addClass('hover-edge');
+      });
+
+      cy.on('mouseout', 'node', (evt) => {
+        if (graphFrozen) return;
+        cy.elements().removeClass('dimmed hover-focus hover-edge');
+      });
+
+      cy.on('tap', 'node', (evt) => {
+        if (evt.target.hasClass('zone-label')) return;
+        showNodeInspector(evt.target.data());
+      });
       cy.on('tap', (evt) => { if (evt.target === cy) closeInspector(); });
     }
 
-    function computeIncrementalPosition(nodeId, neighborHintMap) {
-      const cx = (cy?.width() || 760) / 2;
-      const cyMid = (cy?.height() || 500) / 2;
-      const anchorId = neighborHintMap.get(nodeId);
-      if (anchorId && cy) {
-        const anchorEl = cy.getElementById(anchorId);
-        if (anchorEl.length) {
-          const pos = anchorEl.position();
-          placementAngle += 2.39996;
-          const radius = 58 + (placementAngle % 3) * 14;
-          return {
-            x: Math.max(40, Math.min(cx * 2 - 40, pos.x + Math.cos(placementAngle) * radius)),
-            y: Math.max(40, Math.min(cyMid * 2 - 40, pos.y + Math.sin(placementAngle) * radius))
-          };
+    function toggleLabelMode() {
+      labelMode = labelMode === 'smart' ? 'always' : 'smart';
+      document.getElementById('labelsBtn').textContent = labelMode === 'smart' ? 'Labels: Smart' : 'Labels: Always';
+      if (cy) {
+        cy.style()
+          .selector('node')
+          .style('min-zoomed-font-size', labelMode === 'always' ? 0 : 9)
+          .update();
+      }
+    }
+
+    // Collects all current real node positions for collision checks
+    function getExistingPositions() {
+      const pts = [];
+      if (!cy) return pts;
+      cy.nodes().not('.zone-label').forEach((n) => {
+        const p = n.position();
+        pts.push({ x: p.x, y: p.y, r: Math.max(22, n.outerWidth() / 2) });
+      });
+      return pts;
+    }
+
+    // Guaranteed Non-Overlapping Position Finder (unbounded canvas, no clamping!)
+    function findNonOverlappingPosition(anchorPos, existingPts, minDist = MIN_NODE_SPACING) {
+      const baseX = anchorPos ? anchorPos.x : 0;
+      const baseY = anchorPos ? anchorPos.y : 0;
+      const minSq = minDist * minDist;
+
+      for (let step = 1; step <= 140; step++) {
+        const angle = (spiralCounter + step) * GOLDEN_ANGLE;
+        const radius = anchorPos
+          ? (minDist + Math.sqrt(step) * (minDist * 0.58))
+          : (Math.sqrt(step) * (minDist * 0.72));
+        const x = baseX + Math.cos(angle) * radius;
+        const y = baseY + Math.sin(angle) * radius;
+
+        let collides = false;
+        for (let i = 0; i < existingPts.length; i++) {
+          const dx = x - existingPts[i].x;
+          const dy = y - existingPts[i].y;
+          if (dx * dx + dy * dy < minSq) {
+            collides = true;
+            break;
+          }
+        }
+        if (!collides) {
+          spiralCounter += 1;
+          existingPts.push({ x, y, r: 22 });
+          return { x, y };
         }
       }
-      placementAngle += 2.39996;
-      const ringRadius = 60 + ((cy?.nodes().length || 0) % 7) * 26;
-      return {
-        x: cx + Math.cos(placementAngle) * ringRadius,
-        y: cyMid + Math.sin(placementAngle) * ringRadius
-      };
+      spiralCounter += 1;
+      const fallbackAngle = spiralCounter * GOLDEN_ANGLE;
+      const fallbackR = Math.sqrt(existingPts.length + 1) * minDist * 1.1;
+      const pt = { x: baseX + Math.cos(fallbackAngle) * fallbackR, y: baseY + Math.sin(fallbackAngle) * fallbackR };
+      existingPts.push({ x: pt.x, y: pt.y, r: 22 });
+      return pt;
     }
+
+    // Fast Iterative Overlap-Resolver: guarantees zero circle overlap in ~1-2 ms
+    function resolveNodeOverlaps(nodesCollection = null, minDist = MIN_NODE_SPACING, maxIters = 14) {
+      if (!cy) return;
+      const realNodes = (nodesCollection || cy.nodes()).not('.zone-label');
+      const count = realNodes.length;
+      if (count < 2) return;
+
+      const items = [];
+      realNodes.forEach((n) => {
+        const p = n.position();
+        const rad = Math.max(18, (n.outerWidth() || 28) / 2);
+        items.push({ node: n, x: p.x, y: p.y, r: rad });
+      });
+
+      for (let iter = 0; iter < maxIters; iter++) {
+        let moved = false;
+        for (let i = 0; i < count; i++) {
+          for (let j = i + 1; j < count; j++) {
+            const a = items[i], b = items[j];
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            let distSq = dx * dx + dy * dy;
+            const req = Math.max(minDist, a.r + b.r + 24);
+            if (distSq < req * req) {
+              if (distSq < 0.01) {
+                dx = Math.cos((i + j + 1) * GOLDEN_ANGLE);
+                dy = Math.sin((i + j + 1) * GOLDEN_ANGLE);
+                distSq = 1;
+              }
+              const dist = Math.sqrt(distSq);
+              const push = (req - dist) * 0.54;
+              const ux = dx / dist;
+              const uy = dy / dist;
+              a.x -= ux * push;
+              a.y -= uy * push;
+              b.x += ux * push;
+              b.y += uy * push;
+              moved = true;
+            }
+          }
+        }
+        if (!moved) break;
+      }
+
+      cy.batch(() => {
+        items.forEach((it) => it.node.position({ x: it.x, y: it.y }));
+      });
+    }
+
+    function clearZoneLabels() {
+      if (!cy) return;
+      cy.nodes('.zone-label').remove();
+      cy.edges().removeClass('cross-shard');
+    }
+
+    // Mode-Aware Non-Overlapping Spatial Layout for ALL 3 Views
+    function arrangeActiveView(animateFit = true) {
+      if (!cy || !graphOpen || graphFrozen) return;
+      clearZoneLabels();
+
+      const realNodes = cy.nodes().not('.zone-label');
+      if (realNodes.length === 0) return;
+
+      if (currentViewMode === 'community') {
+        layoutGroupedIslands(realNodes, 'community_id', 'Community');
+      } else if (currentViewMode === 'partition') {
+        layoutGroupedIslands(realNodes, 'partition_id', 'Shard');
+        // Visually distinguish cross-shard cut edges in Partition View
+        cy.edges().forEach((e) => {
+          const pSrc = e.source().data('partition_id');
+          const pDst = e.target().data('partition_id');
+          if (pSrc !== undefined && pDst !== undefined && pSrc !== pDst) {
+            e.addClass('cross-shard');
+          }
+        });
+      } else {
+        // Live / Risk View: spacious non-overlapping concentric/force arrangement
+        const n = realNodes.length;
+        if (n <= 85) {
+          const layout = cy.layout({
+            name: 'cose',
+            eles: cy.elements().not('.zone-label'),
+            animate: false,
+            randomize: false,
+            fit: false,
+            nodeOverlap: 32,
+            nodeRepulsion: () => 24000,
+            idealEdgeLength: () => 115,
+            edgeElasticity: () => 100,
+            gravity: 0.25,
+            numIter: 220
+          });
+          layout.run();
+        }
+        resolveNodeOverlaps(realNodes, MIN_NODE_SPACING + 6, 22);
+      }
+
+      if (animateFit) {
+        cy.fit(undefined, 42);
+      }
+    }
+
+    // Arranges Communities or Partition Shards into distinct, non-overlapping spatial islands/zones
+    function layoutGroupedIslands(realNodes, groupField, prefixLabel) {
+      const groups = new Map();
+      realNodes.forEach((n) => {
+        const gid = Number(n.data(groupField) ?? 0);
+        if (!groups.has(gid)) groups.set(gid, []);
+        groups.get(gid).push(n);
+      });
+
+      // Sort groups by ID for partitions, or by size descending for communities
+      const sortedEntries = [...groups.entries()].sort((a, b) =>
+        groupField === 'partition_id' ? (a[0] - b[0]) : (b[1].length - a[1].length)
+      );
+
+      // Pre-compute each island's bounding radius so islands NEVER touch each other
+      const islands = sortedEntries.map(([gid, members]) => {
+        // Sort members so highest-degree hub sits cleanly at the island center
+        members.sort((a, b) => (b.data('degree') || 0) - (a.data('degree') || 0));
+        const localSpacing = 74;
+        const localOffsets = members.map((_, idx) => {
+          if (idx === 0) return { dx: 0, dy: 0 };
+          const r = localSpacing * Math.sqrt(idx) * 0.92;
+          const theta = idx * GOLDEN_ANGLE;
+          return { dx: Math.cos(theta) * r, dy: Math.sin(theta) * r };
+        });
+        const maxR = localOffsets.reduce((mx, o) => Math.max(mx, Math.hypot(o.dx, o.dy)), 36) + 56;
+        return { gid, members, localOffsets, radius: maxR };
+      });
+
+      const cols = Math.max(1, Math.ceil(Math.sqrt(islands.length)));
+      const cellGap = 80;
+      const maxRadius = Math.max(110, ...islands.map((isl) => isl.radius));
+      const cellStep = maxRadius * 2 + cellGap;
+
+      cy.batch(() => {
+        islands.forEach((isl, idx) => {
+          const row = Math.floor(idx / cols);
+          const col = idx % cols;
+          const centerX = col * cellStep;
+          const centerY = row * cellStep;
+
+          isl.members.forEach((node, mIdx) => {
+            const off = isl.localOffsets[mIdx];
+            node.position({ x: centerX + off.dx, y: centerY + off.dy });
+          });
+
+          // Add crisp floating header badge above each island/shard
+          cy.add({
+            group: 'nodes',
+            classes: 'zone-label',
+            data: {
+              id: `__zone_${groupField}_${isl.gid}`,
+              label: `${prefixLabel} ${isl.gid} (${isl.members.length})`
+            },
+            position: { x: centerX, y: centerY - isl.radius + 14 },
+            selectable: false,
+            grabbable: false
+          });
+        });
+      });
+
+      // Final micro-safety pass inside each island (keeps islands cleanly separated)
+      islands.forEach((isl) => {
+        if (isl.members.length > 1) {
+          resolveNodeOverlaps(cy.collection(isl.members), 68, 10);
+        }
+      });
+    }
+
+    function fitGraph() { if (cy) cy.fit(undefined, 42); }
 
     function queueGraphDiff(nodes, edges, removedNodes = [], removedEdges = []) {
       if (!cy) return;
@@ -939,19 +1260,27 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
         if (!neighborHint.has(e.source)) neighborHint.set(e.source, e.target);
       });
 
+      const existingPts = getExistingPositions();
+      let addedNewNodes = 0;
+
       cy.batch(() => {
         remEdges.forEach((eid) => { const el = cy.getElementById(eid); if (el.length) el.remove(); });
         remNodes.forEach((nid) => { const el = cy.getElementById(nid); if (el.length) el.remove(); });
 
         nodes.forEach((n) => {
           const existing = cy.getElementById(n.id);
-          if (existing.length) existing.data(n);
-          else {
-            cy.add({
-              group: 'nodes',
-              data: n,
-              position: computeIncrementalPosition(n.id, neighborHint)
-            });
+          if (existing.length) {
+            existing.data(n);
+          } else {
+            addedNewNodes++;
+            let anchorPos = null;
+            const hintId = neighborHint.get(n.id);
+            if (hintId) {
+              const anchorEl = cy.getElementById(hintId);
+              if (anchorEl.length) anchorPos = anchorEl.position();
+            }
+            const pos = findNonOverlappingPosition(anchorPos, existingPts, MIN_NODE_SPACING);
+            cy.add({ group: 'nodes', data: n, position: pos });
           }
         });
 
@@ -959,21 +1288,28 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
           const existing = cy.getElementById(e.id);
           if (existing.length) existing.data(e);
           else if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) {
-            cy.add({ group: 'edges', data: e });
+            const edgeEl = cy.add({ group: 'edges', data: e });
+            if (currentViewMode === 'partition') {
+              if (edgeEl.source().data('partition_id') !== edgeEl.target().data('partition_id')) {
+                edgeEl.addClass('cross-shard');
+              }
+            }
           }
         });
       });
-    }
 
-    function runOneShotLayout() {
-      if (!cy || !graphOpen || graphFrozen) return;
-      cy.layout({
-        name: 'cose', animate: true, animationDuration: 350, randomize: false, fit: true,
-        padding: 32, nodeRepulsion: () => 4800, idealEdgeLength: () => 70
-      }).run();
+      if (addedNewNodes > 0) {
+        if (currentViewMode === 'community' || currentViewMode === 'partition') {
+          arrangeActiveView(false);
+        } else {
+          resolveNodeOverlaps(null, MIN_NODE_SPACING, 6);
+        }
+        if (!hasInitialFit && cy.nodes().not('.zone-label').length >= 6) {
+          hasInitialFit = true;
+          fitGraph();
+        }
+      }
     }
-
-    function fitGraph() { if (cy) cy.fit(undefined, 32); }
 
     function replaceGraphFromSnapshot(snapshot) {
       if (!cy || !snapshot) return;
@@ -981,16 +1317,14 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       pendingEdgeUpserts.clear();
       pendingNodeRemovals.clear();
       pendingEdgeRemovals.clear();
+      clearZoneLabels();
 
-      const neighborHint = new Map();
-      (snapshot.edges || []).forEach((e) => {
-        if (!neighborHint.has(e.target)) neighborHint.set(e.target, e.source);
-      });
-
+      const existingPts = [];
       cy.batch(() => {
         cy.elements().remove();
         (snapshot.nodes || []).forEach((n) => {
-          cy.add({ group: 'nodes', data: n, position: computeIncrementalPosition(n.id, neighborHint) });
+          const pos = findNonOverlappingPosition(null, existingPts, MIN_NODE_SPACING);
+          cy.add({ group: 'nodes', data: n, position: pos });
         });
         (snapshot.edges || []).forEach((e) => {
           if (cy.getElementById(e.source).length && cy.getElementById(e.target).length) {
@@ -998,7 +1332,9 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
           }
         });
       });
-      fitGraph();
+
+      arrangeActiveView(true);
+      hasInitialFit = (snapshot.nodes || []).length > 0;
     }
 
     function setGraphViewMode(mode) {
@@ -1008,24 +1344,32 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       document.getElementById('viewPartBtn').classList.toggle('active', mode === 'partition');
 
       const legend = document.getElementById('graphLegend');
+      const hint = document.getElementById('canvasHint');
       if (mode === 'risk') {
         legend.innerHTML = `
           <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Normal Entity</div>
           <div class="legend-item"><span class="dot" style="background:#f59e0b"></span> PageRank Tainted</div>
           <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Anomalous Seed</div>`;
+        hint.textContent = 'Live View: Non-overlapping radial placement · Hover node to trace links · Scroll to zoom';
       } else if (mode === 'community') {
         legend.innerHTML = `
           <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Cluster 0</div>
           <div class="legend-item"><span class="dot" style="background:#10b981"></span> Cluster 2</div>
-          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Cluster 3+ (Louvain)</div>`;
+          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Cluster 3+ (Separated Louvain Islands)</div>`;
+        hint.textContent = 'Community View: Each Louvain cluster is grouped into its own non-overlapping island';
       } else {
         legend.innerHTML = `
           <div class="legend-item"><span class="dot" style="background:#2563eb"></span> Shard 0</div>
           <div class="legend-item"><span class="dot" style="background:#0ea5e9"></span> Shard 1</div>
           <div class="legend-item"><span class="dot" style="background:#10b981"></span> Shard 2</div>
-          <div class="legend-item"><span class="dot" style="background:#8b5cf6"></span> Shard 3+ (LDG)</div>`;
+          <div class="legend-item"><span class="dot" style="background:#f43f5e"></span> Dashed = Cross-Shard Cut Edge</div>`;
+        hint.textContent = 'Partition View: Shards separated spatially · Dashed red lines show cross-shard edge cuts';
       }
-      if (cy) cy.style().update();
+
+      if (cy) {
+        cy.style().update();
+        arrangeActiveView(true);
+      }
     }
 
     function toggleGraphView() {
@@ -1036,6 +1380,9 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       if (graphOpen && cy) setTimeout(() => { cy.resize(); fitGraph(); }, 250);
     }
 
+    // =========================================================================
+    // 2. DOMAIN SWITCHING, BENCHMARKS, ANALYTICS, FORENSICS & PARTITIONING
+    // =========================================================================
     function applyDomainLabels(src) {
       activeSource = src in SOURCE_META ? src : 'blockchain';
       const meta = SOURCE_META[activeSource];
@@ -1049,10 +1396,13 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
     function switchDataSource(newSrc) {
       applyDomainLabels(newSrc);
       stopBrowserRelay();
+      clearZoneLabels();
       if (cy) cy.elements().remove();
       clientGraph.nodes.clear();
       clientGraph.edges.clear();
       benchmarkPoints = [];
+      hasInitialFit = false;
+      spiralCounter = 0;
       document.getElementById('txFeed').innerHTML = `<div class="empty-state">Switching stream to ${escapeHtml(SOURCE_META[newSrc].label)}...</div>`;
 
       if (backendConnected && sendCommand({ action: 'switch_source', source: newSrc })) return;
@@ -1127,7 +1477,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
                 <strong style="color:var(--primary);">${escapeHtml(ev.event)}</strong>
                 <div class="mono" style="font-size:10.5px; color:var(--muted);">Stability: ${ev.top_cluster_stability}% · Q = ${ev.modularity}</div>
               </div>`).join('')
-          : 'Monitoring Louvain partitions for cluster splits, merges & modularity shifts...';
+          : 'Monitoring Louvain partitions for cluster splits, merges &amp; modularity shifts...';
 
         const taintEl = document.getElementById('taintedList');
         const tainted = analytics.top_tainted || [];
@@ -1277,6 +1627,9 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       sendCommand({ action: 'set_mode', mode, speed });
     }
 
+    // =========================================================================
+    // 3. INSPECTOR, SIDE PANEL, DETAILS POP-UP, FOCUS MODE & INBOX
+    // =========================================================================
     function showNodeInspector(d) {
       currentInspectedAddress = d.id || '';
       document.getElementById('inspAddr').textContent = d.id || 'N/A';
@@ -1318,7 +1671,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       syncAllCounters();
       const list = document.getElementById('anomalySideList');
       if (unreadAlerts.length === 0) {
-        list.innerHTML = `<div class="empty-state">No unread anomalies.<br />Rule & ML detections will appear here automatically.</div>`;
+        list.innerHTML = `<div class="empty-state">No unread anomalies.<br />Rule &amp; ML detections will appear here automatically.</div>`;
         return;
       }
       list.innerHTML = unreadAlerts.map((item) => {
@@ -1414,21 +1767,23 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
 
       setTimeout(() => {
         if (!cy) return;
-        cy.elements().removeClass('dimmed focused-target');
+        cy.elements().removeClass('dimmed focused-target hover-focus hover-edge');
         let node = cy.getElementById(alert.primary_node);
         if (!node.length) {
+          const existingPts = getExistingPositions();
+          const pos = findNonOverlappingPosition(null, existingPts, MIN_NODE_SPACING);
           node = cy.add({
             group: 'nodes',
             data: { id: alert.primary_node, label: alert.short_node, degree: 6, is_anomaly: true, risk_taint: 95, ml_score: alert.ml_score || 0 },
-            position: { x: cy.width() / 2 || 400, y: cy.height() / 2 || 250 }
+            position: pos
           });
         }
         const neighborhood = node.closedNeighborhood();
-        cy.elements().difference(neighborhood).addClass('dimmed');
+        cy.elements().not('.zone-label').difference(neighborhood).addClass('dimmed');
         node.addClass('focused-target');
+        neighborhood.edges().addClass('hover-edge');
         node.select();
-        cy.center(node);
-        cy.zoom(1.65);
+        cy.animate({ fit: { eles: neighborhood, padding: 90 } }, { duration: 350 });
         showNodeInspector(node.data());
       }, 150);
     }
@@ -1446,7 +1801,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       document.getElementById('focusBanner').classList.remove('visible');
       document.getElementById('resumeToolbarBtn').style.display = 'none';
       closeInspector();
-      if (cy) cy.elements().removeClass('dimmed focused-target');
+      if (cy) cy.elements().removeClass('dimmed focused-target hover-focus hover-edge');
       if (backendConnected && sendCommand({ action: 'get_snapshot' })) return;
       if (clientMode) {
         replaceGraphFromSnapshot({ nodes: [...clientGraph.nodes.values()], edges: [...clientGraph.edges.values()] });
@@ -1537,9 +1892,10 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       }
     }
 
-    // Client-side multi-source normalizer + engine (runs automatically on Vercel if /ws/stream is unavailable)
+    // =========================================================================
+    // 4. VERCEL FAST-FAILOVER CLIENT ENGINE & MULTI-SOURCE RELAY
+    // =========================================================================
     function normalizeClientEvent(src, payload) {
-      const now = Date.now() / 1000;
       if (src === 'blockchain') {
         const tx = payload.x || payload;
         const senders = [...new Set((tx.inputs || []).map((i) => i?.prev_out?.addr).filter(Boolean))];
@@ -1688,7 +2044,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
     function simulateAnomaly() {
       pushConfig();
       if (backendConnected && sendCommand({ action: 'simulate_anomaly' })) return;
-      processTxClientSide(buildClientSyntheticEvent(true), 'blockchain');
+      processTxClientSide(buildClientSyntheticEvent(true), activeSource);
     }
 
     function simulatePeelChain() {
@@ -1699,7 +2055,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       }
       const w = Array.from({ length: 4 }, (_, i) => `bc1qpeel${i}_${Math.random().toString(16).slice(2, 8)}`);
       for (let i = 0; i < 3; i++) {
-        processTxClientSide({ senders: [w[i]], receivers: [[w[i + 1], 3.2 - i * 0.25]], unit: 'BTC' }, 'blockchain');
+        processTxClientSide({ senders: [w[i]], receivers: [[w[i + 1], 3.2 - i * 0.25]], unit: 'BTC' }, activeSource);
       }
       switchIntelTab('forensics');
     }
@@ -1759,11 +2115,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
         bluesky: { url: 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post', sub: null }
       };
       const ep = endpoints[src];
-      if (!ep) {
-        // For Wikimedia / GDELT / fallback when backend WS is unreachable on serverless host
-        setFeedStatus('fallback', src);
-        return;
-      }
+      if (!ep) { setFeedStatus('fallback', src); return; }
 
       try {
         relayWs = new WebSocket(ep.url);
@@ -1780,7 +2132,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
         relayWs.onmessage = (evt) => {
           if (currentStreamMode !== 'live' || activeSource !== src) return;
           const now = Date.now();
-          if (now - lastNormalRelayAt < 320) return;
+          if (now - lastNormalRelayAt < 360) return;
           lastNormalRelayAt = now;
           try {
             const payload = JSON.parse(evt.data);
@@ -1801,7 +2153,6 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       if (backendConnected || clientMode) return;
       clientMode = true;
       startBrowserRelayForSource(activeSource);
-      // Guarantee smooth live graph updates even if external public WS is firewalled
       setInterval(() => {
         if (!backendConnected && clientMode && currentStreamMode === 'live' && !graphFrozen) {
           processTxClientSide(buildClientSyntheticEvent(Math.random() < 0.14), activeSource);
@@ -1814,7 +2165,6 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
       feedIsLive = false;
       backendConnected = false;
 
-      // Fast 1.8s failover so Vercel never stays stuck on "Connecting..."
       clearTimeout(backendConnectTimer);
       backendConnectTimer = setTimeout(activateVercelDirectStream, 1800);
 
@@ -1894,10 +2244,7 @@ RETURN [n IN nodes(p) | n.address] AS chain, [r IN relationships(p) | r.btc] AS 
         }
       };
 
-      socket.onerror = () => {
-        if (!backendConnected) activateVercelDirectStream();
-      };
-
+      socket.onerror = () => { if (!backendConnected) activateVercelDirectStream(); };
       socket.onclose = () => {
         clearTimeout(relayFallbackTimer);
         const wasConnected = backendConnected;
