@@ -1,5 +1,5 @@
 """
-Stage 2 & 3 — Advanced Graph Analytics + Louvain Community Evolution Tracker (Module 5 & LSGA.txt).
+Stage 2 & 3 — Advanced Graph Analytics + Louvain Community Evolution Tracker.
 
 Computes on the active dynamic graph:
 1. Louvain Community Detection + Modularity (Q)
